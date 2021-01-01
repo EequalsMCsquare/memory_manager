@@ -98,12 +98,17 @@ static_bin::free(const size_t& ptr, const size_t& nbytes) noexcept
   // cal start chunk
   auto __start_chunk = chunks_.begin() + __ptr_chunks;
   // cal how many chunks
-  auto __end_chunks = __start_chunk + __chunks;
+  auto __end_chunk = __start_chunk + __chunks;
 
-  // TODO: check if the chunks are already marked as available.
+  // check if the chunks are already marked as available.
+  for (auto __iter = __start_chunk; __iter != __end_chunk; __iter++) {
+    if (*__iter == true) {
+      return -2;
+    }
+  }
 
   // mark the chunks available
-  std::for_each(__start_chunk, __end_chunks, [](auto&& tag) { tag = true; });
+  std::for_each(__start_chunk, __end_chunk, [](auto&& tag) { tag = true; });
 
   chunk_left_ += __chunks;
   return 0;

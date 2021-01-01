@@ -141,21 +141,22 @@ TEST_CASE("ilegal range segment free error", "[free]")
   REQUIRE(bin.chunk_left() == 10);
 }
 
-// TEST_CASE("double free error", "[free]")
-// {
-//   libmem::static_bin bin(counter, 32, 10, 0);
-//   counter++;
+TEST_CASE("double free error", "[free]")
+{
+  libmem::static_bin bin(counter, 32, 10, 0);
+  counter++;
 
-//   // double free
-//   auto rv1 = bin.free(0, 128);
-//   REQUIRE(rv1 == -2);
-//   REQUIRE(bin.chunk_left() == 10);
+  // double free
+  auto rv1 = bin.free(0, 128);
+  REQUIRE(rv1 == -2);
+  REQUIRE(bin.chunk_left() == 10);
 
-//   auto ptr = bin.malloc(128);
-//   REQUIRE(ptr >= 0);
-//   REQUIRE(ptr == 0);
+  auto ptr = bin.malloc(128);
+  REQUIRE(ptr >= 0);
+  REQUIRE(ptr == 0);
+  REQUIRE(bin.chunk_left() == 6);
 
-//   auto rv2 = bin.free(ptr, 256);
-//   REQUIRE(rv2 == -2);
-//   REQUIRE(bin.chunk_left() == 10);
-// }
+  auto rv2 = bin.free(ptr, 256);
+  REQUIRE(rv2 == -2);
+  REQUIRE(bin.chunk_left() == 6);
+}
