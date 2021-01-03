@@ -8,7 +8,7 @@ namespace libmem {
 class base_bin
 {
 protected:
-  std::atomic_size_t& segment_counter_;
+  std::atomic_size_t& segment_counter_ref_;
   std::mutex          mtx_;
 
 public:

@@ -19,7 +19,7 @@ class Arena
 {
 private:
   ArenaConfig        cfg_;
-  std::atomic_size_t segment_counter; // segment_id
+  std::atomic_size_t segment_counter_; // segment_id
 
 public:
   explicit Arena();
