@@ -15,25 +15,13 @@ enum class SEG_TYPE
 struct base_segment
 {
   std::string_view arena_name_;
-  const size_t     segment_id_;
-  const size_t     batch_id_;
-  const SEG_TYPE   type_;
-  const size_t     bin_id_;
-  const size_t     segment_size_;
+  size_t           id_;
+  size_t           batch_id_;
+  SEG_TYPE         type_;
+  size_t           bin_id_;
+  size_t           size_;
+  size_t           addr_pshift_;
 };
-
-struct statbin_segment : public base_segment
-{
-  const size_t addr_pshift;
-};
-
-struct cachbin_segment : public base_segment
-{
-  const size_t addr_pshift;
-};
-
-struct instbin_segment : public base_segment
-{};
 
 struct segmentdesc
 {
@@ -45,11 +33,7 @@ struct segmentdesc
   const size_t   segment_size;
   const size_t   start_pshift;
 
-  explicit segmentdesc(const instbin_segment& seg);
-
-  explicit segmentdesc(const statbin_segment& seg);
-
-  explicit segmentdesc(const cachbin_segment& seg);
+  explicit segmentdesc(const base_segment& seg);
 
   std::string shmhdl_name() noexcept;
 };
