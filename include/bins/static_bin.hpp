@@ -32,18 +32,17 @@ public:
                       const size_t&       chunk_count,
                       const size_t&       base_pshift);
 
-  const int64_t malloc(const size_t& nbytes) noexcept override;
+  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept override;
 
   /**
    * @brief if free success, 0 will be returned.
    * -1 means ptr or segment is not in legal range.
    * -2 means one or more chunks is already marked as available.
    *
-   * @param ptr
-   * @param nbytes
+   * @param std::shared_ptr<base_segment>
    * @return int
    */
-  int free(const size_t& ptr, const size_t& nbytes) noexcept override;
+  int free(std::shared_ptr<base_segment> segment) noexcept override;
 
   void clear() noexcept override;
 

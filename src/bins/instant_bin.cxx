@@ -8,24 +8,30 @@ instant_bin::instant_bin(std::atomic_size_t& segment_counter,
   , arena_name_(arena_name)
 {}
 
-const int64_t
-instant_bin::malloc(const size_t& nbytes) noexcept
+std::shared_ptr<base_segment>
+instant_bin::malloc(const size_t nbytes) noexcept
 {
-  std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
   size_t                      __tmp = this->segment_counter_ref_++;
+  std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGG(mtx_);
 
   this->segments_.insert(std::make_pair(
     __tmp,
     std::make_shared<libshm::shm_handle>(
       fmt::format("{}#instbin#seg{}", arena_name_, __tmp), nbytes)));
-  return std::move(__tmp);
+  auto __seg          = std::make_shared<base_segment>();
+  __seg->addr_pshift_ = 0;
+  __seg->id_          = __tmp;
+  __seg->size_        = nbytes;
+  __seg->type_        = SEG_TYPE::instbin_segment;
+
+  return std::move(__seg);
 }
 
 int
-instant_bin::free(const size_t& segment_id, const size_t& nbytes) noexcept
+instant_bin::free(std::shared_ptr<base_segment> segment) noexcept
 {
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
-  auto                        __pair = this->segments_.find(segment_id);
+  auto                        __pair = this->segments_.find(segment->id_);
   if (__pair == this->segments_.end()) {
     return -1;
   }
@@ -51,7 +57,7 @@ instant_bin::size() noexcept
 }
 
 std::shared_ptr<libshm::shm_handle>
-instant_bin::get_shmhdl_ptr(const size_t& seg_id) noexcept
+instant_bin::get_shmhdl(const size_t& seg_id) noexcept
 {
   auto __pair = this->segments_.find(seg_id);
   if (__pair == this->segments_.end()) {

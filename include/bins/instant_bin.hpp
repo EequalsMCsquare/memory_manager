@@ -22,16 +22,9 @@ public:
 
   instant_bin(const instant_bin&) = delete;
 
-  /**
-   * @brief
-   *
-   * @param nbytes
-   * @return const int64_t segment_id
-   */
-  const int64_t malloc(const size_t& nbytes) noexcept override;
+  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept override;
 
-  int free(const size_t& segment_id,
-           const size_t& nbytes = 0) noexcept override;
+  int free(std::shared_ptr<base_segment> segment) noexcept override;
 
   void clear() noexcept override;
 
@@ -39,7 +32,6 @@ public:
 
   const size_t size() noexcept;
 
-  std::shared_ptr<libshm::shm_handle> get_shmhdl_ptr(
-    const size_t& seg_id) noexcept;
+  std::shared_ptr<libshm::shm_handle> get_shmhdl(const size_t& seg_id) noexcept;
 };
 }

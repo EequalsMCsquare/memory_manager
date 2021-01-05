@@ -2,38 +2,46 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <mutex>
+
+#include "segment.hpp"
+#include <spdlog/spdlog.h>
 
 namespace libmem {
 class base_bin
 {
 protected:
-  std::atomic_size_t& segment_counter_ref_;
-  std::mutex          mtx_;
+  std::atomic_size_t&             segment_counter_ref_;
+  std::mutex                      mtx_;
+  std::shared_ptr<spdlog::logger> logger_;
 
 public:
   base_bin(std::atomic_size_t& segment_counter) noexcept;
+
+  base_bin(std::atomic_size_t&             segment_counter,
+           std::shared_ptr<spdlog::logger> logger) noexcept;
 
   base_bin() = delete;
 
   base_bin(const base_bin&) = delete;
 
   /**
-   * @brief allocate given size of memory segment
+   * @brief allocate given memory size segment
    *
    * @param nbytes
-   * @return const int64_t memory segmen ptr
+   * @return std::shared_ptr<base_segment>
    */
-  virtual const int64_t malloc(const size_t& nbytes) noexcept = 0;
+  virtual std::shared_ptr<base_segment> malloc(
+    const size_t nbytes) noexcept = 0;
 
   /**
    * @brief free a piece of segment
    *
-   * @param ptr
-   * @param nbytes
-   * @return int 0: no error, -1 means segment is not in current range
+   * @param segment
+   * @return int
    */
-  virtual int free(const size_t& ptr, const size_t& nbytes) noexcept = 0;
+  virtual int free(std::shared_ptr<base_segment> segment) noexcept = 0;
 
   /**
    * @brief free all the segment

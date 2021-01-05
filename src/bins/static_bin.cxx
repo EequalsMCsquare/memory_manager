@@ -47,8 +47,8 @@ static_bin::first_fit(const size_t& chunks_req) noexcept
   return chunks_.end();
 }
 
-const int64_t
-static_bin::malloc(const size_t& nbytes) noexcept
+std::shared_ptr<base_segment>
+static_bin::malloc(const size_t nbytes) noexcept
 {
   // lock
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGG(this->mtx_);
@@ -57,43 +57,58 @@ static_bin::malloc(const size_t& nbytes) noexcept
   auto __chunkreq = this->chunk_req(nbytes);
   // insufficient memory in this bin
   if (__chunkreq > this->chunk_left()) {
-    return -1;
+    return nullptr;
   }
 
   auto __iter = this->first_fit(__chunkreq);
   if (__iter == chunks_.end()) {
-    return -1;
+    return nullptr;
   }
 
+  auto __seg = std::make_shared<base_segment>();
   // tag chunks as false which means not available
   std::for_each(__iter, __iter + __chunkreq, [](auto&& tag) { tag = false; });
   // decrease chunk_left;
   this->chunk_left_ -= __chunkreq;
 
-  // need to add base_pshift() to the return val;
-  return std::distance(this->chunks_.begin(), __iter) * this->chunk_size();
+  // cal ptr;
+  size_t __ptr =
+    std::distance(this->chunks_.begin(), __iter) * this->chunk_size();
+
+  // assign to base_segment
+  __seg->addr_pshift_ = __ptr + this->base_pshift();
+  __seg->size_        = nbytes;
+  __seg->type_        = SEG_TYPE::statbin_segment;
+  // TODO: segment_id
+  return __seg;
 }
 
 int
-static_bin::free(const size_t& ptr, const size_t& nbytes) noexcept
+static_bin::free(std::shared_ptr<base_segment> segment) noexcept
 {
-  // caller need to check if ptr is in range
+  if (segment == nullptr) {
+    return -1;
+  }
+  if (segment->type_ != SEG_TYPE::statbin_segment) {
+    return -1;
+  }
+  auto __ptr  = segment->addr_pshift_ - this->base_pshift();
+  auto __size = segment->size_;
 
-  // lock
-  std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
-
-  auto __ptr_chunks = this->chunk_req(ptr);
+  auto __ptr_chunks = this->chunk_req(__ptr);
 
   // check ptr is in legal range
   if (__ptr_chunks > this->chunk_count()) {
     return -1;
   }
 
-  auto __chunks = this->chunk_req(nbytes);
+  auto __chunks = this->chunk_req(__size);
   // check segment is in legal range
   if (__ptr_chunks + __chunks > this->chunk_count()) {
     return -1;
   }
+  // lock
+  std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
 
   // cal start chunk
   auto __start_chunk = chunks_.begin() + __ptr_chunks;
@@ -106,7 +121,6 @@ static_bin::free(const size_t& ptr, const size_t& nbytes) noexcept
       return -2;
     }
   }
-
   // mark the chunks available
   std::for_each(__start_chunk, __end_chunk, [](auto&& tag) { tag = true; });
 
