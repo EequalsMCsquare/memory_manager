@@ -6,7 +6,7 @@
 #include "base_bin.hpp"
 
 namespace libmem {
-class static_bin : base_bin
+class static_bin : public base_bin
 {
 private:
   const size_t      base_pshift_;
@@ -27,7 +27,8 @@ private:
   // TODO: best fit
 
 public:
-  explicit static_bin(std::atomic_size_t& segment_counter,
+  explicit static_bin(const size_t        id,
+                      std::atomic_size_t& segment_counter,
                       const size_t&       chunk_size,
                       const size_t&       chunk_count,
                       const size_t&       base_pshift);

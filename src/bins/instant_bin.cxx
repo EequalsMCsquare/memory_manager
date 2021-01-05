@@ -2,9 +2,10 @@
 #include <fmt/format.h>
 
 namespace libmem {
-instant_bin::instant_bin(std::atomic_size_t& segment_counter,
+instant_bin::instant_bin(const size_t        id,
+                         std::atomic_size_t& segment_counter,
                          std::string_view    arena_name)
-  : base_bin(segment_counter)
+  : base_bin(id, segment_counter)
   , arena_name_(arena_name)
 {}
 
@@ -23,6 +24,7 @@ instant_bin::malloc(const size_t nbytes) noexcept
   __seg->id_          = __tmp;
   __seg->size_        = nbytes;
   __seg->type_        = SEG_TYPE::instbin_segment;
+  __seg->bin_id_      = this->id();
 
   return std::move(__seg);
 }
@@ -30,6 +32,12 @@ instant_bin::malloc(const size_t nbytes) noexcept
 int
 instant_bin::free(std::shared_ptr<base_segment> segment) noexcept
 {
+  if (segment->type_ != SEG_TYPE::instbin_segment) {
+    return -1;
+  }
+  if (segment->bin_id_ != this->id()) {
+    return -1;
+  }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
   auto                        __pair = this->segments_.find(segment->id_);
   if (__pair == this->segments_.end()) {

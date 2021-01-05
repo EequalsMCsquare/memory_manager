@@ -23,7 +23,8 @@ private:
   std::string_view                       arena_name_;
 
 public:
-  explicit cache_bin(std::atomic_size_t& segment_counter,
+  explicit cache_bin(const size_t        id,
+                     std::atomic_size_t& segment_counter,
                      std::string_view    arena_name,
                      const size_t&       max_segsz);
 

@@ -15,7 +15,8 @@ private:
   std::map<int, std::shared_ptr<libshm::shm_handle>> segments_;
 
 public:
-  explicit instant_bin(std::atomic_size_t& segment_counter,
+  explicit instant_bin(const size_t        id,
+                       std::atomic_size_t& segment_counter,
                        std::string_view    arena_name);
 
   instant_bin() = delete;

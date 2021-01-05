@@ -12,14 +12,16 @@ namespace libmem {
 class base_bin
 {
 protected:
+  const size_t                    id_;
   std::atomic_size_t&             segment_counter_ref_;
   std::mutex                      mtx_;
   std::shared_ptr<spdlog::logger> logger_;
 
 public:
-  base_bin(std::atomic_size_t& segment_counter) noexcept;
+  base_bin(const size_t id, std::atomic_size_t& segment_counter) noexcept;
 
-  base_bin(std::atomic_size_t&             segment_counter,
+  base_bin(const size_t                    id,
+           std::atomic_size_t&             segment_counter,
            std::shared_ptr<spdlog::logger> logger) noexcept;
 
   base_bin() = delete;
@@ -48,5 +50,7 @@ public:
    *
    */
   virtual void clear() noexcept = 0;
+
+  const size_t id() const noexcept;
 };
 } // namespace libmem

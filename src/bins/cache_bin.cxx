@@ -3,11 +3,12 @@
 
 namespace libmem {
 
-cache_bin::cache_bin(std::atomic_size_t& segment_counter,
+cache_bin::cache_bin(const size_t        id,
+                     std::atomic_size_t& segment_counter,
                      std::string_view    arena_name,
                      const size_t&       max_segsz)
 
-  : base_bin(segment_counter)
+  : base_bin(id, segment_counter)
   , max_segsz_(max_segsz)
   , arena_name_(arena_name)
 {

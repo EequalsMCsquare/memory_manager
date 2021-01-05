@@ -5,11 +5,12 @@
 
 namespace libmem {
 
-static_bin::static_bin(std::atomic_size_t& segment_counter,
+static_bin::static_bin(const size_t        id,
+                       std::atomic_size_t& segment_counter,
                        const size_t&       chunk_size,
                        const size_t&       chunk_count,
                        const size_t&       base_pshift)
-  : base_bin(segment_counter)
+  : base_bin(id, segment_counter)
   , base_pshift_(base_pshift)
   , chunk_size_(chunk_size)
   , chunk_count_(chunk_count)
@@ -50,6 +51,7 @@ static_bin::first_fit(const size_t& chunks_req) noexcept
 std::shared_ptr<base_segment>
 static_bin::malloc(const size_t nbytes) noexcept
 {
+  size_t __segment_id = this->segment_counter_ref_++;
   // lock
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGG(this->mtx_);
 
@@ -79,7 +81,8 @@ static_bin::malloc(const size_t nbytes) noexcept
   __seg->addr_pshift_ = __ptr + this->base_pshift();
   __seg->size_        = nbytes;
   __seg->type_        = SEG_TYPE::statbin_segment;
-  // TODO: segment_id
+  __seg->bin_id_      = this->id();
+  __seg->id_          = __segment_id;
   return __seg;
 }
 
@@ -89,7 +92,12 @@ static_bin::free(std::shared_ptr<base_segment> segment) noexcept
   if (segment == nullptr) {
     return -1;
   }
+  // check if the segment type is statbin_segment
   if (segment->type_ != SEG_TYPE::statbin_segment) {
+    return -1;
+  }
+  // check if the segment is malloc in this bin
+  if (segment->bin_id_ != this->id()) {
     return -1;
   }
   auto __ptr  = segment->addr_pshift_ - this->base_pshift();
