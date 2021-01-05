@@ -7,6 +7,8 @@
 #include <initializer_list>
 #include <system_error>
 
+#include <spdlog/spdlog.h>
+
 namespace libmem {
 
 struct ArenaConfig
@@ -18,15 +20,15 @@ struct ArenaConfig
 class Arena
 {
 private:
-  ArenaConfig        cfg_;
-  std::atomic_size_t segment_counter_; // segment_id
+  ArenaConfig                     cfg_;
+  std::atomic_size_t              segment_counter_; // segment_id
+  std::shared_ptr<spdlog::logger> logger_;
 
 public:
   explicit Arena();
-
-  Arena(std::initializer_list<size_t>);
-
+  Arena(std::shared_ptr<spdlog::logger> logger);
   Arena(ArenaConfig config);
+  Arena(std::initializer_list<size_t>);
 
   ~Arena();
 
