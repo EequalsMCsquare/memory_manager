@@ -1,4 +1,5 @@
 #include "bins/static_bin.hpp"
+#include "segment.hpp"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
@@ -34,18 +35,29 @@ TEST_CASE("when create static bin with unaligned chunk size, thorw", "[create]")
 TEST_CASE("allocate with successful return", "[malloc]")
 {
   libmem::static_bin bin(counter, 32, 200, 0);
-  counter += 1;
-  auto ptr1 = bin.malloc(128);
-  REQUIRE(ptr1 > -1);
-  REQUIRE(ptr1 == 0);
+  auto               seg1 = bin.malloc(128);
+  REQUIRE(seg1);
+  REQUIRE(seg1->addr_pshift_ == 0);
+  REQUIRE(seg1->size_ == 128);
+  REQUIRE(seg1->type_ == libmem::SEG_TYPE::statbin_segment);
 
-  auto ptr2 = bin.malloc(128);
-  REQUIRE(ptr2 > -1);
-  REQUIRE(ptr2 == 128);
+  auto seg2 = bin.malloc(128);
+  REQUIRE(seg2);
+  REQUIRE(seg2->addr_pshift_ == 128);
+  REQUIRE(seg2->size_ == 128);
+  REQUIRE(seg2->type_ == libmem::SEG_TYPE::statbin_segment);
 
-  auto ptr3 = bin.malloc(256);
-  REQUIRE(ptr3 > -1);
-  REQUIRE(ptr3 == 256);
+  auto seg3 = bin.malloc(256);
+  REQUIRE(seg3);
+  REQUIRE(seg3->addr_pshift_ == 256);
+  REQUIRE(seg3->size_ == 256);
+  REQUIRE(seg3->type_ == libmem::SEG_TYPE::statbin_segment);
+
+  auto seg4 = bin.malloc(512);
+  REQUIRE(seg4);
+  REQUIRE(seg4->addr_pshift_ == 512);
+  REQUIRE(seg4->size_ == 512);
+  REQUIRE(seg4->type_ == libmem::SEG_TYPE::statbin_segment);
 }
 
 TEST_CASE("allocate with error return", "[malloc]")
@@ -53,12 +65,12 @@ TEST_CASE("allocate with error return", "[malloc]")
   libmem::static_bin bin(counter, 32, 100, 0);
   counter += 1;
   // successful malloc
-  auto ptr1 = bin.malloc(512);
-  REQUIRE(ptr1 >= 0);
+  auto seg1 = bin.malloc(512);
+  REQUIRE(seg1);
 
   // insufficient memory return -1
-  auto ptr2 = bin.malloc(32 * 101);
-  REQUIRE(ptr2 == -1);
+  auto seg2 = bin.malloc(32 * 101);
+  REQUIRE_FALSE(seg2);
 }
 
 TEST_CASE("free allocated buffer", "[free]")
@@ -69,48 +81,41 @@ TEST_CASE("free allocated buffer", "[free]")
   constexpr size_t ALLOC_SIZE = 256;
 
   // malloc
-  auto ptr1 = bin.malloc(ALLOC_SIZE);
-  REQUIRE(ptr1 >= 0);
-  REQUIRE(ptr1 == 0);
+  auto seg1 = bin.malloc(ALLOC_SIZE);
+  REQUIRE(seg1);
   REQUIRE(bin.chunk_left() == 200 - (ALLOC_SIZE / bin.chunk_size()));
 
-  auto ptr2 = bin.malloc(ALLOC_SIZE);
-  REQUIRE(ptr2 >= 0);
-  REQUIRE(ptr2 == 256);
+  auto seg2 = bin.malloc(ALLOC_SIZE);
+  REQUIRE(seg2);
   REQUIRE(bin.chunk_left() == 200 - 2 * (ALLOC_SIZE / bin.chunk_size()));
 
   // free
-  bin.free(ptr1, 256);
+  bin.free(seg1);
   REQUIRE(bin.chunk_left() == 200 - (ALLOC_SIZE / bin.chunk_size()));
 
   // malloc with 0 - 64 bytes
-  auto ptr3 = bin.malloc(64);
-  REQUIRE(ptr3 >= 0);
-  REQUIRE(ptr3 == 0);
+  auto seg3 = bin.malloc(64);
+  REQUIRE(seg3);
   REQUIRE(bin.chunk_left() == 200 - 2 - (ALLOC_SIZE / bin.chunk_size()));
 
   // malloc with 64 - 128 bytes
-  auto ptr4 = bin.malloc(64);
-  REQUIRE(ptr4 >= 0);
-  REQUIRE(ptr4 == 64);
+  auto seg4 = bin.malloc(64);
+  REQUIRE(seg4);
   REQUIRE(bin.chunk_left() == 200 - 2 * 2 - (ALLOC_SIZE / bin.chunk_size()));
 
   // malloc with 128 - 192 bytes
-  auto ptr5 = bin.malloc(64);
-  REQUIRE(ptr5 >= 0);
-  REQUIRE(ptr5 == 128);
+  auto seg5 = bin.malloc(64);
+  REQUIRE(seg5);
   REQUIRE(bin.chunk_left() == 200 - 2 * 3 - (ALLOC_SIZE / bin.chunk_size()));
 
   // malloc with 192 - 256 bytes
-  auto ptr6 = bin.malloc(64);
-  REQUIRE(ptr6 >= 0);
-  REQUIRE(ptr6 == 192);
+  auto seg6 = bin.malloc(64);
+  REQUIRE(seg6);
   REQUIRE(bin.chunk_left() == 200 - 2 * 4 - (ALLOC_SIZE / bin.chunk_size()));
 
   // malloc with 512 - 768
-  auto ptr7 = bin.malloc(256);
-  REQUIRE(ptr7 >= 0);
-  REQUIRE(ptr7 == 512);
+  auto seg7 = bin.malloc(256);
+  REQUIRE(seg7);
   REQUIRE(bin.chunk_left() ==
           200 - 2 * 4 - (ALLOC_SIZE / bin.chunk_size()) * 2);
 }
@@ -119,24 +124,34 @@ TEST_CASE("ilegal range segment free error", "[free]")
 {
   libmem::static_bin bin(counter, 32, 10, 0);
   counter++;
+  auto __seg   = std::make_shared<libmem::base_segment>();
+  __seg->type_ = libmem::SEG_TYPE::statbin_segment;
 
   // ilegal ptr
-  auto rv1 = bin.free(400, 0);
+  __seg->addr_pshift_ = 400;
+  __seg->size_        = 0;
+  auto rv1            = bin.free(__seg);
   REQUIRE(rv1 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal ptr
-  auto rv2 = bin.free(800, 0);
+  __seg->addr_pshift_ = 800;
+  __seg->size_        = 0;
+  auto rv2            = bin.free(__seg);
   REQUIRE(rv2 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal segment
-  auto rv3 = bin.free(0, 800);
+  __seg->addr_pshift_ = 0;
+  __seg->size_        = 800;
+  auto rv3            = bin.free(__seg);
   REQUIRE(rv3 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal segment
-  auto rv4 = bin.free(0, 400);
+  __seg->addr_pshift_ = 0;
+  __seg->size_        = 400;
+  auto rv4            = bin.free(__seg);
   REQUIRE(rv4 == -1);
   REQUIRE(bin.chunk_left() == 10);
 }
@@ -146,17 +161,22 @@ TEST_CASE("double free error", "[free]")
   libmem::static_bin bin(counter, 32, 10, 0);
   counter++;
 
+  auto __seg   = std::make_shared<libmem::base_segment>();
+  __seg->type_ = libmem::SEG_TYPE::statbin_segment;
   // double free
-  auto rv1 = bin.free(0, 128);
+  __seg->addr_pshift_ = 0;
+  __seg->size_        = 128;
+  auto rv1            = bin.free(__seg);
   REQUIRE(rv1 == -2);
   REQUIRE(bin.chunk_left() == 10);
 
-  auto ptr = bin.malloc(128);
-  REQUIRE(ptr >= 0);
-  REQUIRE(ptr == 0);
+  auto seg = bin.malloc(128);
+  REQUIRE(seg);
+  REQUIRE(seg->addr_pshift_ == 0);
   REQUIRE(bin.chunk_left() == 6);
 
-  auto rv2 = bin.free(ptr, 256);
+  seg->size_ = 256;
+  auto rv2   = bin.free(seg);
   REQUIRE(rv2 == -2);
   REQUIRE(bin.chunk_left() == 6);
 }
