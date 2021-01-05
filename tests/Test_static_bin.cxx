@@ -7,7 +7,7 @@ std::atomic_size_t counter = 1;
 
 TEST_CASE("create static_bin", "[create]")
 {
-  libmem::static_bin bin(counter, 32, 200, 0);
+  libmem::static_bin bin(0, counter, 32, 200, 0);
   counter += 1;
   REQUIRE(bin.base_pshift() == 0);
   REQUIRE(bin.chunk_count() == 200);
@@ -17,24 +17,24 @@ TEST_CASE("create static_bin", "[create]")
 
 TEST_CASE("when create static bin with unaligned chunk size, thorw", "[create]")
 {
-  REQUIRE_THROWS(libmem::static_bin(counter, 31, 200, 0));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 31, 200, 0));
   counter += 1;
-  REQUIRE_THROWS(libmem::static_bin(counter, 48, 200, 0));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 48, 200, 0));
   counter += 1;
-  REQUIRE_THROWS(libmem::static_bin(counter, 127, 200, 0));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 127, 200, 0));
   counter += 1;
-  REQUIRE_NOTHROW(libmem::static_bin(counter, 128, 200, 0));
+  REQUIRE_NOTHROW(libmem::static_bin(0, counter, 128, 200, 0));
   counter += 1;
-  REQUIRE_NOTHROW(libmem::static_bin(counter, 1024, 200, 0));
+  REQUIRE_NOTHROW(libmem::static_bin(0, counter, 1024, 200, 0));
   counter += 1;
-  REQUIRE_THROWS(libmem::static_bin(counter, 1024, 200, 1111));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 1024, 200, 1111));
   counter += 1;
-  REQUIRE_THROWS(libmem::static_bin(counter, 1024, 200, 3333));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 1024, 200, 3333));
 }
 
 TEST_CASE("allocate with successful return", "[malloc]")
 {
-  libmem::static_bin bin(counter, 32, 200, 0);
+  libmem::static_bin bin(0, counter, 32, 200, 0);
   auto               seg1 = bin.malloc(128);
   REQUIRE(seg1);
   REQUIRE(seg1->addr_pshift_ == 0);
@@ -62,7 +62,7 @@ TEST_CASE("allocate with successful return", "[malloc]")
 
 TEST_CASE("allocate with error return", "[malloc]")
 {
-  libmem::static_bin bin(counter, 32, 100, 0);
+  libmem::static_bin bin(0, counter, 32, 100, 0);
   counter += 1;
   // successful malloc
   auto seg1 = bin.malloc(512);
@@ -75,7 +75,7 @@ TEST_CASE("allocate with error return", "[malloc]")
 
 TEST_CASE("free allocated buffer", "[free]")
 {
-  libmem::static_bin bin(counter, 32, 200, 0);
+  libmem::static_bin bin(0, counter, 32, 200, 0);
   counter += 1;
 
   constexpr size_t ALLOC_SIZE = 256;
@@ -122,7 +122,7 @@ TEST_CASE("free allocated buffer", "[free]")
 
 TEST_CASE("ilegal range segment free error", "[free]")
 {
-  libmem::static_bin bin(counter, 32, 10, 0);
+  libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
   auto __seg   = std::make_shared<libmem::base_segment>();
   __seg->type_ = libmem::SEG_TYPE::statbin_segment;
@@ -158,7 +158,7 @@ TEST_CASE("ilegal range segment free error", "[free]")
 
 TEST_CASE("double free error", "[free]")
 {
-  libmem::static_bin bin(counter, 32, 10, 0);
+  libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
 
   auto __seg   = std::make_shared<libmem::base_segment>();

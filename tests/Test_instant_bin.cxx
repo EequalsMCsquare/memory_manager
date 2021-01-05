@@ -6,14 +6,14 @@
 TEST_CASE("create instant bin", "[create]")
 {
   std::atomic_size_t  segment_counter = 0;
-  libmem::instant_bin bin(segment_counter, "test_arena");
+  libmem::instant_bin bin(0, segment_counter, "test_arena");
   REQUIRE(bin.shmhdl_count() == 0);
 }
 
 TEST_CASE("instant bin malloc", "[malloc]")
 {
   std::atomic_size_t  segment_counter = 0;
-  libmem::instant_bin bin(segment_counter, "test_arena");
+  libmem::instant_bin bin(0, segment_counter, "test_arena");
   REQUIRE(bin.shmhdl_count() == 0);
 
   auto seg1 = bin.malloc(4_MB);
@@ -44,7 +44,7 @@ TEST_CASE("instant bin malloc", "[malloc]")
 TEST_CASE("instant bin free", "[free]")
 {
   std::atomic_size_t  segment_counter = 0;
-  libmem::instant_bin bin(segment_counter, "test_arena");
+  libmem::instant_bin bin(0, segment_counter, "test_arena");
 
   auto seg1 = bin.malloc(4_MB);
   REQUIRE(seg1 != nullptr);
