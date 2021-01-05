@@ -64,6 +64,8 @@ public:
                  const std::vector<size_t>& statbin_chunksz,
                  const size_t&              statbin_chunkcnt);
 
+  ~batch();
+
   std::shared_ptr<base_segment> allocate(const size_t nbytes);
 
   int deallocate(std::shared_ptr<base_segment> segment) noexcept;

@@ -18,6 +18,7 @@ batch::batch(std::string_view arena_name, const size_t& id)
   , segment_counter_(0)
 {
   this->logger_ = spdlog::stdout_color_mt(fmt::format("{}", arena_name_));
+  spdlog::set_default_logger(this->logger_);
 }
 
 batch::batch(std::string_view                arena_name,
@@ -27,7 +28,9 @@ batch::batch(std::string_view                arena_name,
   , id_(id)
   , segment_counter_(0)
   , logger_(logger)
-{}
+{
+  spdlog::set_default_logger(this->logger_);
+}
 
 batch::batch(std::string_view           arena_name,
              const size_t&              id,
@@ -97,6 +100,11 @@ batch::batch(std::string_view           arena_name,
           std::vector<size_t>(statbin_chunksz.size(), statbin_chunkcnt))
 {}
 
+batch::~batch()
+{
+  spdlog::drop_all();
+}
+
 size_t
 batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
                         const std::vector<size_t>& statbin_chunkcnt)
@@ -106,6 +114,7 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
 
   auto   __sz_iter        = statbin_chunksz.begin();
   auto   __cnt_iter       = statbin_chunkcnt.begin();
+  size_t __idx            = 0;
   size_t __current_pshift = 0;
 
   // init this->static_bins_
@@ -114,8 +123,12 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
       throw std::invalid_argument("static bin chunk size must be aligned to " +
                                   std::to_string(ALIGNMENT));
     }
-    this->static_bins_.push_back(std::make_unique<static_bin>(
-      this->segment_counter_, *__sz_iter, *__cnt_iter, __current_pshift));
+    this->static_bins_.push_back(
+      std::make_unique<static_bin>(__idx++,
+                                   this->segment_counter_,
+                                   *__sz_iter,
+                                   *__cnt_iter,
+                                   __current_pshift));
     __current_pshift += *__sz_iter * *__cnt_iter;
   }
 
@@ -162,7 +175,6 @@ batch::allocate(const size_t nbytes)
         continue;
       } else {
         // perfect match available
-        __segment->bin_id_     = i;
         __segment->batch_id_   = this->id();
         __segment->arena_name_ = this->arena_name();
         return std::move(__segment);
@@ -183,7 +195,6 @@ batch::allocate(const size_t nbytes)
       // remainder bin.
       continue;
     } else {
-      __segment->bin_id_     = idx;
       __segment->batch_id_   = this->id();
       __segment->arena_name_ = this->arena_name();
       return std::move(__segment);
@@ -199,11 +210,13 @@ batch::deallocate(std::shared_ptr<base_segment> segment) noexcept
   if (segment->type_ != SEG_TYPE::statbin_segment) {
     return -1;
   }
-  if (segment->bin_id_ >= 0 && segment->bin_id_ < this->static_bins_.size()) {
-    // TODO: check segment is in the bin's range
-    auto rv = this->static_bins_[segment->bin_id_]->free(segment);
-    segment.reset();
-    return rv;
+  if (segment->bin_id_ < this->static_bins_.size()) {
+    for (const auto& bin : this->static_bins_) {
+      if (bin->id() == segment->bin_id_) {
+        return bin->free(segment);
+      }
+    }
+    return -2;
   } else {
     return -2;
   }
