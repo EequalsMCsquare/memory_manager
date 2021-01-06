@@ -18,6 +18,8 @@
 namespace libmem {
 class batch
 {
+  friend class fmt::formatter<batch>;
+
 private:
   std::string_view   arena_name_;
   const size_t       id_;
@@ -26,16 +28,10 @@ private:
 
   std::unique_ptr<libshm::shm_handle>      handle_;
   std::vector<std::unique_ptr<static_bin>> static_bins_;
-  std::shared_ptr<spdlog::logger>          logger_;
 
   void init_shm(const size_t& buffsz);
 
   explicit batch(std::string_view arena_name, const size_t& id);
-
-  explicit batch(std::string_view                arena_name,
-                 const size_t&                   id,
-                 std::shared_ptr<spdlog::logger> logger);
-
   /**
    * @brief
    *
@@ -68,7 +64,7 @@ public:
 
   std::shared_ptr<base_segment> allocate(const size_t nbytes);
 
-  int deallocate(std::shared_ptr<base_segment> segment) noexcept;
+  void deallocate(std::shared_ptr<base_segment> segment);
 
   std::string_view arena_name() noexcept;
   const size_t     id() noexcept;

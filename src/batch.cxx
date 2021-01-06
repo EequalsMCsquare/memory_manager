@@ -1,8 +1,11 @@
 #include "batch.hpp"
+#include "segment.hpp"
 
 #include <algorithm>
+#include <exception>
 #include <fmt/format.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 namespace libmem {
 
@@ -17,19 +20,7 @@ batch::batch(std::string_view arena_name, const size_t& id)
   , id_(id)
   , segment_counter_(0)
 {
-  this->logger_ = spdlog::stdout_color_mt(fmt::format("{}", arena_name_));
-  spdlog::set_default_logger(this->logger_);
-}
-
-batch::batch(std::string_view                arena_name,
-             const size_t&                   id,
-             std::shared_ptr<spdlog::logger> logger)
-  : arena_name_(arena_name)
-  , id_(id)
-  , segment_counter_(0)
-  , logger_(logger)
-{
-  spdlog::set_default_logger(this->logger_);
+  spdlog::info("initializing {}/batch{}", arena_name_, id_);
 }
 
 batch::batch(std::string_view           arena_name,
@@ -38,22 +29,25 @@ batch::batch(std::string_view           arena_name,
              const std::vector<size_t>& statbin_chunkcnt)
   : batch(arena_name, id)
 {
-  spdlog::info("initializing batch... name: {}, id: {}", arena_name_, id_);
   if (statbin_chunkcnt.size() == 0) {
+    spdlog::critical("empty static bin chunk count is not allowed!");
     throw std::invalid_argument(
       "empty static bin chunk count is not acceptable.");
   }
   if (statbin_chunksz.size() == 0) {
+    spdlog::critical("empty static bin chunk size is not allowed!");
     throw std::invalid_argument(
       "empty static bin chunk size is not acceptable.");
   }
   if (statbin_chunkcnt.size() != statbin_chunksz.size()) {
+    spdlog::critical(
+      "static bin chunk size's length should equal to its chunk count's");
     throw std::invalid_argument("static bin chunk size's length should equal "
                                 "to static bin chunk count's.");
   }
 
   this->init_shm(this->init_static_bins(statbin_chunksz, statbin_chunkcnt));
-  spdlog::info("batch {} initializing complete.", id_);
+  spdlog::info("{}/batch{} initializing complete.", arena_name_, id_);
 }
 
 batch::batch(std::string_view arena_name,
@@ -64,7 +58,6 @@ batch::batch(std::string_view arena_name,
              const size_t&    statbin_size)
   : batch(arena_name, id)
 {
-  spdlog::info("initializing batch... name: {}, id: {}", arena_name_, id_);
   if (statbin_minchunksz > statbin_maxchunksz) {
     throw std::invalid_argument(
       "static bin min chunk must be smaller than max chunk");
@@ -87,7 +80,7 @@ batch::batch(std::string_view arena_name,
 
   this->init_shm(this->init_static_bins(
     __chunksz, std::vector<size_t>(__bin_count, statbin_size)));
-  spdlog::info("batch {} initializing complete.", id_);
+  spdlog::info("{}/batch{} initializing complete.", arena_name_, id_);
 }
 
 batch::batch(std::string_view           arena_name,
@@ -102,13 +95,14 @@ batch::batch(std::string_view           arena_name,
 
 batch::~batch()
 {
-  spdlog::drop_all();
+  spdlog::info("destroying {}/batch{}", arena_name(), id());
 }
 
 size_t
 batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
                         const std::vector<size_t>& statbin_chunkcnt)
 {
+  spdlog::info("initializing static bins...");
   // reserve
   this->static_bins_.reserve(statbin_chunksz.size());
 
@@ -146,17 +140,32 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
 void
 batch::init_shm(const size_t& buffsz)
 {
-  spdlog::info("initializing shm_handle... size: {}", buffsz);
-  this->handle_ = std::make_unique<libshm::shm_handle>(
-    fmt::format("{}#batch{}#statbin", arena_name_, id_), buffsz);
+  spdlog::info("initializing shm_handle... size: {}KB", buffsz);
+  auto handle_name = fmt::format("{}#batch{}#statbin", arena_name_, id_);
+  try {
+    this->handle_ = std::make_unique<libshm::shm_handle>(handle_name, buffsz);
+  } catch (const std::exception& e) {
+    spdlog::critical("fail to create shm_handle with following args: "
+                     "{{handle_name: {}, buffer_size: {}}}. error message: {}",
+                     handle_name.c_str(),
+                     buffsz,
+                     e.what());
+    // re-throw
+    throw e;
+  }
   spdlog::info("initializing shm_handle complete.");
 }
 
 std::shared_ptr<base_segment>
 batch::allocate(const size_t nbytes)
 {
+  spdlog::info("allocate {} bytes of segment", nbytes);
   // Too large, should've used instant bin
   if (nbytes > this->max_chunksz() * 8) {
+    spdlog::error("allocate size too large for static bin, please consider "
+                  "using instant bin instead! acceptable size should <= {}",
+                  this->max_chunksz() * 8);
+    // recoverable
     throw std::runtime_error(
       "required bytes too large! consider using instant bin instead.");
   }
@@ -201,6 +210,8 @@ batch::allocate(const size_t nbytes)
     }
   }
   // 没辙了, arena should push back a batch
+  spdlog::warn(
+    "unable to find a satified segment in {}/batch{}", arena_name(), id());
   return nullptr;
 }
 
@@ -208,6 +219,9 @@ int
 batch::deallocate(std::shared_ptr<base_segment> segment) noexcept
 {
   if (segment->type_ != SEG_TYPE::statbin_segment) {
+    spdlog::error("segment type does not satisfy. expect: {}, but receive {}",
+                  SEG_TYPE::statbin_segment,
+                  segment->type_);
     return -1;
   }
   if (segment->bin_id_ < this->static_bins_.size()) {
@@ -216,8 +230,10 @@ batch::deallocate(std::shared_ptr<base_segment> segment) noexcept
         return bin->free(segment);
       }
     }
+    spdlog::error("unalbe to find the allocate bin.");
     return -2;
   } else {
+    spdlog::error("unalbe to find the allocate bin.");
     return -2;
   }
 }

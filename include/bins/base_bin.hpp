@@ -12,17 +12,12 @@ namespace libmem {
 class base_bin
 {
 protected:
-  const size_t                    id_;
-  std::atomic_size_t&             segment_counter_ref_;
-  std::mutex                      mtx_;
-  std::shared_ptr<spdlog::logger> logger_;
+  const size_t        id_;
+  std::atomic_size_t& segment_counter_ref_;
+  std::mutex          mtx_;
 
 public:
   base_bin(const size_t id, std::atomic_size_t& segment_counter) noexcept;
-
-  base_bin(const size_t                    id,
-           std::atomic_size_t&             segment_counter,
-           std::shared_ptr<spdlog::logger> logger) noexcept;
 
   base_bin() = delete;
 
