@@ -64,7 +64,7 @@ public:
 
   std::shared_ptr<base_segment> allocate(const size_t nbytes);
 
-  void deallocate(std::shared_ptr<base_segment> segment);
+  int deallocate(std::shared_ptr<base_segment> segment) noexcept;
 
   std::string_view arena_name() noexcept;
   const size_t     id() noexcept;

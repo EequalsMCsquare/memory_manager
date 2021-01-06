@@ -83,7 +83,7 @@ arena::deallocate(std::shared_ptr<base_segment> segment)
     // static bin deallocate
   } else {
     throw std::runtime_error(
-      fmt::format("fail to deallocate segment: {}", segment));
+      fmt::format("fail to deallocate segment: {}", segment->id_));
   }
 }
 

@@ -219,9 +219,10 @@ int
 batch::deallocate(std::shared_ptr<base_segment> segment) noexcept
 {
   if (segment->type_ != SEG_TYPE::statbin_segment) {
-    spdlog::error("segment type does not satisfy. expect: {}, but receive {}",
-                  SEG_TYPE::statbin_segment,
-                  segment->type_);
+    // spdlog::error("segment type does not satisfy. expect: {}, but receive
+    // {}",
+    //               (int)SEG_TYPE::statbin_segment,
+    //               (int)segment->type_);
     return -1;
   }
   if (segment->bin_id_ < this->static_bins_.size()) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <fmt/format.h>
 #include <string_view>
 
 namespace libmem {
@@ -39,3 +40,19 @@ struct segmentdesc
 };
 
 }
+
+// template<>
+// struct fmt::formatter<libmem::SEG_TYPE> : formatter<std::string_view>
+// {
+//   template<typename FormatContext>
+//   auto format(libmem::SEG_TYPE, FormatContext&);
+// };
+
+// template<>
+// struct fmt::formatter<libmem::base_segment>
+// {
+//   constexpr auto parse(format_parse_context& ctx);
+
+//   template<typename FormatContext>
+//   auto format(const libmem::base_segment&, FormatContext& ctx);
+// };
