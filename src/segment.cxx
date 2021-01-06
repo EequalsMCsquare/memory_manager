@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fmt/format.h>
+#include <spdlog/fmt/bundled/core.h>
 
 namespace libmem {
 
@@ -31,3 +32,46 @@ segmentdesc::shmhdl_name() noexcept
 }
 
 }
+
+template<>
+struct fmt::formatter<libmem::SEG_TYPE> : formatter<std::string_view>
+{
+  template<typename FormatContext>
+  auto format(libmem::SEG_TYPE type, FormatContext& ctx)
+  {
+    std::string_view name = "unknown";
+    switch (type) {
+      case libmem::SEG_TYPE::cachbin_segment:
+        name = "Cache Bin";
+        break;
+      case libmem::SEG_TYPE::statbin_segment:
+        name = "Static Bin";
+        break;
+      case libmem::SEG_TYPE::instbin_segment:
+        name = "Instant Bin";
+        break;
+    }
+    return formatter<std::string_view>::format(name, ctx);
+  }
+};
+
+template<>
+struct fmt::formatter<libmem::base_segment>
+{
+  constexpr auto parse(format_parse_context& ctx) { return ctx.end(); }
+
+  template<typename FormatContext>
+  auto format(const libmem::base_segment& seg, FormatContext& ctx)
+  {
+    return format_to(ctx.out(),
+                     "<base_segment>(alloc by: {}/batch{}/{}_{}, id: {}, size: "
+                     "{}, address shift: {})",
+                     seg.arena_name_,
+                     seg.batch_id_,
+                     seg.type_,
+                     seg.bin_id_,
+                     seg.id_,
+                     seg.size_,
+                     seg.addr_pshift_);
+  }
+};
