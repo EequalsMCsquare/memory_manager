@@ -2,7 +2,6 @@
 
 #include <cstring>
 #include <fmt/format.h>
-#include <spdlog/fmt/bundled/core.h>
 
 namespace libmem {
 
