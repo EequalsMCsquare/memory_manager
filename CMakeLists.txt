@@ -8,10 +8,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
-find_package(shared_memory REQUIRED)
+
+if(NOT shared_memory_FOUND)
+  find_package(shared_memory REQUIRED)
+endif()
+
 
 if(shared_memory_FOUND)
   message(STATUS "libshared_memory found! ${shared_memory_VERSION}")
+else()
+  message(ERROR "unalble to find libshared_memory");
 endif()
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bins SRC)
