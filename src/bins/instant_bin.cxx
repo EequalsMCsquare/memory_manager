@@ -23,6 +23,7 @@ instant_bin::malloc(const size_t nbytes) noexcept
   __seg->addr_pshift_ = 0;
   __seg->id_          = __tmp;
   __seg->size_        = nbytes;
+  __seg->arena_name_  = this->arena_name_;
   __seg->type_        = SEG_TYPE::instbin_segment;
   __seg->bin_id_      = this->id();
 

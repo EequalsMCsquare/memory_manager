@@ -9,6 +9,7 @@
 #include <system_error>
 
 #include "batch.hpp"
+#include "bins/cache_bin.hpp"
 #include "bins/instant_bin.hpp"
 #include "segment.hpp"
 
@@ -21,24 +22,18 @@ private:
   std::atomic_size_t                 segment_counter_; // segment_id
   std::deque<std::unique_ptr<batch>> batches_;
   std::unique_ptr<instant_bin>       instant_bin_;
-  // TODO: cache_bin
+  std::unique_ptr<cache_bin>         cache_bin_;
 
   void init_cache_bin();
   void init_instant_bin();
   void add_batch();
 
 public:
-  explicit arena() = delete;
   arena(std::string name);
-
+  explicit arena() = delete;
   ~arena();
-
-  // TODO: allocate
   std::shared_ptr<base_segment> allocate(const size_t nbytes);
-
-  // TODO: deallocate
-  void deallocate(std::shared_ptr<base_segment> segment);
-
+  void             deallocate(std::shared_ptr<base_segment> segment);
   std::string_view name() noexcept;
   size_t           batch_count() noexcept;
 };

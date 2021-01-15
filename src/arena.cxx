@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace libmem {
@@ -18,6 +19,7 @@ constexpr std::initializer_list<size_t> default_statbin_chunkcnt{
 };
 
 arena::arena(std::string name)
+  : segment_counter_(0)
 {
   this->name_ = std::move(name);
   this->init_cache_bin();
@@ -25,11 +27,21 @@ arena::arena(std::string name)
   this->add_batch();
 }
 
+arena::~arena()
+{
+  spdlog::trace("begin to clean arena_{}", this->name());
+
+  // TODO:
+  spdlog::trace("arena_{} clean up complete.", this->name());
+}
+
 void
 arena::add_batch()
 {
+  spdlog::trace("add new batch. Current batch count: {}",
+                this->batches_.size() + 1);
   this->batches_.push_back(std::make_unique<batch>(name_,
-                                                   this->batches_.size() + 2,
+                                                   this->batches_.size(),
                                                    default_statbin_chunksz,
                                                    default_statbin_chunkcnt));
 }
@@ -37,19 +49,34 @@ arena::add_batch()
 void
 arena::init_instant_bin()
 {
+  spdlog::trace("initializing instant bin...");
   this->instant_bin_ =
     std::make_unique<instant_bin>(1, this->segment_counter_, this->name());
+  spdlog::trace("instant bin initialized!");
+}
+
+void
+arena::init_cache_bin()
+{
+  spdlog::trace("initializing cache bin...");
+
+  // TODO:
+  spdlog::trace("cache bin initialized!");
 }
 
 std::shared_ptr<base_segment>
 arena::allocate(const size_t nbytes)
 {
+  spdlog::trace("allocating {} bytes segment.", nbytes);
   std::shared_ptr<base_segment> __seg;
 
   if (nbytes <= this->batches_.front()->min_chunksz()) {
     // cache bin allocate
+    throw std::runtime_error("hasn't implement cache bin.");
+    return std::move(this->cache_bin_->malloc(nbytes));
   } else if (nbytes > this->batches_.front()->max_chunksz()) {
     // instant bin
+    return std::move(this->instant_bin_->malloc(nbytes));
   } else {
     // static bin
     for (const auto& batch : this->batches_) {
@@ -75,6 +102,7 @@ arena::allocate(const size_t nbytes)
 void
 arena::deallocate(std::shared_ptr<base_segment> segment)
 {
+  spdlog::trace("deallocating segment.");
   if (segment->type_ == SEG_TYPE::cachbin_segment) {
     // cache bin deallocate
   } else if (segment->type_ == SEG_TYPE::instbin_segment) {
