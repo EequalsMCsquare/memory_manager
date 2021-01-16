@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 static_bin::static_bin(const size_t        id,
                        std::atomic_size_t& segment_counter,

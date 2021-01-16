@@ -4,6 +4,8 @@
 #include <catch2/catch.hpp>
 #include <mem_literals.hpp>
 
+namespace libmem = shm_kernel::memory_manager;
+
 TEST_CASE("create arena", "[create]")
 {
   libmem::arena arena("test_arena");

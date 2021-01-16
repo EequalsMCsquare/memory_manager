@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 constexpr std::initializer_list<size_t> default_statbin_chunksz{
   512,   1_KB,  2_KB,  4_KB,  8_KB,  12_KB, 16_KB,

@@ -5,6 +5,8 @@
 
 std::atomic_size_t counter = 1;
 
+namespace libmem = shm_kernel::memory_manager;
+
 TEST_CASE("create static_bin", "[create]")
 {
   libmem::static_bin bin(0, counter, 32, 200, 0);

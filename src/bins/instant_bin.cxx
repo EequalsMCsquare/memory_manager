@@ -1,7 +1,7 @@
 #include "bins/instant_bin.hpp"
 #include <fmt/format.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 instant_bin::instant_bin(const size_t        id,
                          std::atomic_size_t& segment_counter,
                          std::string_view    arena_name)
@@ -17,7 +17,7 @@ instant_bin::malloc(const size_t nbytes) noexcept
 
   this->segments_.insert(std::make_pair(
     __tmp,
-    std::make_shared<libshm::shm_handle>(
+    std::make_shared<shared_memory::shm_handle>(
       fmt::format("{}#instbin#seg{}", arena_name_, __tmp), nbytes)));
   auto __seg          = std::make_shared<base_segment>();
   __seg->addr_pshift_ = 0;
@@ -65,7 +65,7 @@ instant_bin::size() noexcept
   return this->segments_.size();
 }
 
-std::shared_ptr<libshm::shm_handle>
+std::shared_ptr<shared_memory::shm_handle>
 instant_bin::get_shmhdl(const size_t& seg_id) noexcept
 {
   auto __pair = this->segments_.find(seg_id);

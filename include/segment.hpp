@@ -4,7 +4,7 @@
 #include <fmt/format.h>
 #include <string_view>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 enum class SEG_TYPE
 {

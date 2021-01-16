@@ -13,7 +13,7 @@
 #include "bins/instant_bin.hpp"
 #include "segment.hpp"
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 class arena
 {

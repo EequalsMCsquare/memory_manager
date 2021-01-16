@@ -7,7 +7,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 constexpr bool
 is_aligned(const size_t& num)
@@ -143,7 +143,8 @@ batch::init_shm(const size_t& buffsz)
   spdlog::info("initializing shm_handle... size: {}KB", buffsz);
   auto handle_name = fmt::format("{}#batch{}#statbin", arena_name_, id_);
   try {
-    this->handle_ = std::make_unique<libshm::shm_handle>(handle_name, buffsz);
+    this->handle_ =
+      std::make_unique<shared_memory::shm_handle>(handle_name, buffsz);
   } catch (const std::exception& e) {
     spdlog::critical("fail to create shm_handle with following args: "
                      "{{handle_name: {}, buffer_size: {}}}. error message: {}",

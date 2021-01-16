@@ -10,7 +10,7 @@
 #include <system_error>
 #include <thread>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 using namespace std::chrono_literals;
 
@@ -25,7 +25,7 @@ cache_bin::cache_bin(const size_t        id,
 {
   spdlog::info("initializing cache bin");
   // create shm_handler
-  this->handle_ = std::make_unique<libshm::shm_handle>(
+  this->handle_ = std::make_unique<shared_memory::shm_handle>(
     fmt::format("{}#cachbin", arena_name_),
     (sizeof(std::mutex) + max_segsz_ + sizeof(std::condition_variable)) *
       BUFF_AREA_COUNT);

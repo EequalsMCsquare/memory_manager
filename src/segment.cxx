@@ -3,7 +3,7 @@
 #include <cstring>
 #include <fmt/format.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 segmentdesc::segmentdesc(const base_segment& seg)
   : segment_id(seg.id_)

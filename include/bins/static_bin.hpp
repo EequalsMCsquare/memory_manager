@@ -5,7 +5,7 @@
 
 #include "base_bin.hpp"
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 class static_bin : public base_bin
 {
 private:

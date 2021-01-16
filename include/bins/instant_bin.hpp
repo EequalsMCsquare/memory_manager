@@ -7,12 +7,12 @@
 
 #include <shm_kernel/shared_memory.hpp>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 class instant_bin : base_bin
 {
 private:
-  std::string_view                                   arena_name_;
-  std::map<int, std::shared_ptr<libshm::shm_handle>> segments_;
+  std::string_view                                          arena_name_;
+  std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
 
 public:
   explicit instant_bin(const size_t        id,
@@ -33,6 +33,7 @@ public:
 
   const size_t size() noexcept;
 
-  std::shared_ptr<libshm::shm_handle> get_shmhdl(const size_t& seg_id) noexcept;
+  std::shared_ptr<shared_memory::shm_handle> get_shmhdl(
+    const size_t& seg_id) noexcept;
 };
 }

@@ -17,7 +17,7 @@
  *  | buffer area-0 | buffer area-1  | buffer area-2 | buffer area-3 |
  */
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 
 constexpr uint32_t BUFF_AREA_COUNT = 8;
 
@@ -30,7 +30,7 @@ class cache_bin : base_bin
 {
 private:
   std::pmr::unsynchronized_pool_resource                pmr_pool_;
-  std::unique_ptr<libshm::shm_handle>                   handle_;
+  std::unique_ptr<shared_memory::shm_handle>            handle_;
   const size_t                                          max_segsz_;
   std::string_view                                      arena_name_;
   std::array<std::condition_variable*, BUFF_AREA_COUNT> area_condvs_;

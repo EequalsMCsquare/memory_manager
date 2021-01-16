@@ -3,6 +3,7 @@
 #include "mem_literals.hpp"
 #include <catch2/catch.hpp>
 
+namespace libmem = shm_kernel::memory_manager;
 TEST_CASE("create a batch", "[create]")
 {
   std::atomic_size_t segment_counter{ 0 };

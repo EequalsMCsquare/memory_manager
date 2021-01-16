@@ -15,7 +15,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 class batch
 {
   friend class fmt::formatter<batch>;
@@ -26,8 +26,8 @@ private:
   size_t             total_bytes_;
   std::atomic_size_t segment_counter_;
 
-  std::unique_ptr<libshm::shm_handle>      handle_;
-  std::vector<std::unique_ptr<static_bin>> static_bins_;
+  std::unique_ptr<shared_memory::shm_handle> handle_;
+  std::vector<std::unique_ptr<static_bin>>   static_bins_;
 
   void init_shm(const size_t& buffsz);
 

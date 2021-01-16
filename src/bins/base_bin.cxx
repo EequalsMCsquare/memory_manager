@@ -1,7 +1,7 @@
 #include "bins/base_bin.hpp"
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 base_bin::base_bin(const size_t        id,
                    std::atomic_size_t& segment_counter) noexcept
   : segment_counter_ref_(segment_counter)

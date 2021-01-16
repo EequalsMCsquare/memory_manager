@@ -8,7 +8,7 @@
 #include "segment.hpp"
 #include <spdlog/spdlog.h>
 
-namespace libmem {
+namespace shm_kernel::memory_manager {
 class base_bin
 {
 protected:

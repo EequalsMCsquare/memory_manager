@@ -17,7 +17,7 @@ endif()
 if(shared_memory_FOUND)
   message(STATUS "libshared_memory found! ${shared_memory_VERSION}")
 else()
-  message(ERROR "unalble to find libshared_memory");
+  message(ERROR "unalble to find libshared_memory")
 endif()
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bins SRC)
