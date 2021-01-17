@@ -1,19 +1,25 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
+#include <memory>
+#include <mutex>
 #include <vector>
 
-#include "base_bin.hpp"
+#include "segment.hpp"
 
 namespace shm_kernel::memory_manager {
-class static_bin : public base_bin
+class static_bin
 {
-private:
-  const size_t      base_pshift_;
-  const size_t      chunk_size_;
-  const size_t      chunk_count_;
-  size_t            chunk_left_;
-  std::vector<bool> chunks_;
+protected:
+  const size_t        id_;
+  std::atomic_size_t& segment_counter_ref_;
+  std::mutex          mtx_;
+  const size_t        base_pshift_;
+  const size_t        chunk_size_;
+  const size_t        chunk_count_;
+  size_t              chunk_left_;
+  std::vector<bool>   chunks_;
 
   /**
    * @brief Convert nbytes to how many chunks needed to allocate
@@ -33,7 +39,7 @@ public:
                       const size_t&       chunk_count,
                       const size_t&       base_pshift);
 
-  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept override;
+  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept;
 
   /**
    * @brief if free success, 0 will be returned.
@@ -43,9 +49,11 @@ public:
    * @param std::shared_ptr<base_segment>
    * @return int
    */
-  int free(std::shared_ptr<base_segment> segment) noexcept override;
+  int free(std::shared_ptr<base_segment> segment) noexcept;
 
-  void clear() noexcept override;
+  void clear() noexcept;
+
+  const size_t id() noexcept;
 
   const size_t base_pshift() noexcept;
 

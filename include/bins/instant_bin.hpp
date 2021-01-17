@@ -1,17 +1,22 @@
 #pragma once
 
-#include "base_bin.hpp"
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string_view>
 
 #include <shm_kernel/shared_memory.hpp>
 
+#include "segment.hpp"
+
 namespace shm_kernel::memory_manager {
-class instant_bin : base_bin
+class instant_bin
 {
-private:
-  std::string_view                                          arena_name_;
+protected:
+  const size_t        id_;
+  std::atomic_size_t& segment_counter_ref_;
+  std::mutex          mtx_;
+  std::string_view    arena_name_;
   std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
 
 public:
@@ -23,11 +28,13 @@ public:
 
   instant_bin(const instant_bin&) = delete;
 
-  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept override;
+  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept;
 
-  int free(std::shared_ptr<base_segment> segment) noexcept override;
+  int free(std::shared_ptr<base_segment> segment) noexcept;
 
-  void clear() noexcept override;
+  void clear() noexcept;
+
+  const size_t id() noexcept;
 
   const size_t shmhdl_count() noexcept;
 

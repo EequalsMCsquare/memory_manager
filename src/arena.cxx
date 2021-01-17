@@ -73,7 +73,7 @@ arena::allocate(const size_t nbytes)
   if (nbytes <= this->batches_.front()->min_chunksz()) {
     // cache bin allocate
     throw std::runtime_error("hasn't implement cache bin.");
-    return std::move(this->cache_bin_->malloc(nbytes));
+    // return std::move(this->cache_bin_->malloc(nbytes));
   } else if (nbytes > this->batches_.front()->max_chunksz()) {
     // instant bin
     return std::move(this->instant_bin_->malloc(nbytes));

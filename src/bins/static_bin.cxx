@@ -10,7 +10,8 @@ static_bin::static_bin(const size_t        id,
                        const size_t&       chunk_size,
                        const size_t&       chunk_count,
                        const size_t&       base_pshift)
-  : base_bin(id, segment_counter)
+  : id_(id)
+  , segment_counter_ref_(segment_counter)
   , base_pshift_(base_pshift)
   , chunk_size_(chunk_size)
   , chunk_count_(chunk_count)
@@ -151,6 +152,12 @@ static_bin::chunk_req(const size_t& nbytes) noexcept
 {
   return std::move(nbytes % chunk_size() == 0 ? nbytes / chunk_size()
                                               : nbytes / chunk_size() + 1);
+}
+
+const size_t
+static_bin::id() noexcept
+{
+  return this->id_;
 }
 const size_t
 static_bin::base_pshift() noexcept

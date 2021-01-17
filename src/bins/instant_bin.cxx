@@ -5,7 +5,8 @@ namespace shm_kernel::memory_manager {
 instant_bin::instant_bin(const size_t        id,
                          std::atomic_size_t& segment_counter,
                          std::string_view    arena_name)
-  : base_bin(id, segment_counter)
+  : id_(id)
+  , segment_counter_ref_(segment_counter)
   , arena_name_(arena_name)
 {}
 
@@ -53,7 +54,11 @@ instant_bin::clear() noexcept
 {
   this->segments_.clear();
 }
-
+const size_t
+instant_bin::id() noexcept
+{
+  return this->id_;
+}
 const size_t
 instant_bin::shmhdl_count() noexcept
 {

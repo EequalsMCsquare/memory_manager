@@ -37,6 +37,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   # TODO Install
 else()
   add_library(shm_kernel::memory_manager ALIAS memory_manager)
-  set(memory_manager_FOUND TRUE CACHE BOOL)
-  set(memory_manager_VERSION ${PROJECT_VERSION} CACHE STRING)
+  set(memory_manager_FOUND TRUE )
+  set(memory_manager_VERSION ${PROJECT_VERSION} )
 endif()

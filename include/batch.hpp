@@ -29,6 +29,11 @@ private:
   std::unique_ptr<shared_memory::shm_handle> handle_;
   std::vector<std::unique_ptr<static_bin>>   static_bins_;
 
+  /**
+   * @brief initialize shared memory handle for this batch
+   *
+   * @param buffsz shared memory handle size
+   */
   void init_shm(const size_t& buffsz);
 
   explicit batch(std::string_view arena_name, const size_t& id);
@@ -62,8 +67,20 @@ public:
 
   ~batch();
 
+  /**
+   * @brief allocate a shared memory segment.
+   *
+   * @param nbytes
+   * @return std::shared_ptr<base_segment>
+   */
   std::shared_ptr<base_segment> allocate(const size_t nbytes);
 
+  /**
+   * @brief deallocate a shared memory segment
+   *
+   * @param segment
+   * @return int
+   */
   int deallocate(std::shared_ptr<base_segment> segment) noexcept;
 
   std::string_view arena_name() noexcept;

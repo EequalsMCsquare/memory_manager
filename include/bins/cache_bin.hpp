@@ -1,13 +1,16 @@
 #pragma once
-#include "base_bin.hpp"
 #include "shm_kernel/shared_memory.hpp"
 
 #include <array>
+#include <atomic>
 #include <condition_variable>
 #include <deque>
 #include <future>
 #include <memory>
 #include <memory_resource>
+#include <mutex>
+
+#include "segment.hpp"
 
 /*
  *  cache bin buffer memory layout:
@@ -21,14 +24,12 @@ namespace shm_kernel::memory_manager {
 
 constexpr uint32_t BUFF_AREA_COUNT = 8;
 
-enum class TASK_TYPE
-{
-  MALLOC,
-  FREE,
-};
-class cache_bin : base_bin
+class cache_bin
 {
 private:
+  const size_t                                          id_;
+  std::atomic_size_t&                                   segment_counter_ref_;
+  std::mutex                                            mtx_;
   std::pmr::unsynchronized_pool_resource                pmr_pool_;
   std::unique_ptr<shared_memory::shm_handle>            handle_;
   const size_t                                          max_segsz_;
@@ -43,10 +44,12 @@ public:
                      std::string_view    arena_name,
                      const size_t&       max_segsz);
 
-  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept override;
+  int malloc(const size_t nbytes, std::promise<base_segment>& segment) noexcept;
 
-  int free(std::shared_ptr<base_segment> segment) noexcept override;
+  int free(std::shared_ptr<base_segment> segment) noexcept;
 
-  void clear() noexcept override;
+  void clear() noexcept;
+
+  const size_t id() const noexcept;
 };
 }

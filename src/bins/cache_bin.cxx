@@ -19,7 +19,8 @@ cache_bin::cache_bin(const size_t        id,
                      std::string_view    arena_name,
                      const size_t&       max_segsz)
 
-  : base_bin(id, segment_counter)
+  : id_(id)
+  , segment_counter_ref_(segment_counter)
   , max_segsz_(max_segsz)
   , arena_name_(arena_name)
 {
@@ -55,9 +56,22 @@ cache_bin::cache_bin(const size_t        id,
   spdlog::info("cache bin initialized!");
 }
 
-std::shared_ptr<base_segment>
-cache_bin::malloc(const size_t nbytes) noexcept
+int
+cache_bin::malloc(const size_t                nbytes,
+                  std::promise<base_segment>& segment) noexcept
 {
+  // 思路:
+  //    1. client 发送 < 1_KB的 allocate 请求
+  //    2. 找到一片空闲shared buffering area
+  //    3. 给这片buffering area 上锁
+  //    4. How to achieve this?
+  //    yield std::shared_ptr<base_segment>
+  //    5. the buffering area's condition_variable.wait() until client copy the
+  //    data into the buffering area.
+  //    6. copy the shared memory buffering into local heap
+  //    7. unlock
+  //    8. done!
+
   // lock
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGG(this->mtx_);
 
@@ -88,4 +102,9 @@ cache_bin::clear() noexcept
   // TODO:
 }
 
+const size_t
+cache_bin::id() const noexcept
+{
+  return this->id_;
+}
 }
