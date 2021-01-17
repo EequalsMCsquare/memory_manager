@@ -49,7 +49,7 @@ static_bin::first_fit(const size_t& chunks_req) noexcept
   return chunks_.end();
 }
 
-std::shared_ptr<base_segment>
+std::shared_ptr<stat_segment>
 static_bin::malloc(const size_t nbytes) noexcept
 {
   size_t __segment_id = this->segment_counter_ref_++;
@@ -68,7 +68,7 @@ static_bin::malloc(const size_t nbytes) noexcept
     return nullptr;
   }
 
-  auto __seg = std::make_shared<base_segment>();
+  auto __seg = std::make_shared<stat_segment>();
   // tag chunks as false which means not available
   std::for_each(__iter, __iter + __chunkreq, [](auto&& tag) { tag = false; });
   // decrease chunk_left;
@@ -81,20 +81,15 @@ static_bin::malloc(const size_t nbytes) noexcept
   // assign to base_segment
   __seg->addr_pshift_ = __ptr + this->base_pshift();
   __seg->size_        = nbytes;
-  __seg->type_        = SEG_TYPE::statbin_segment;
   __seg->bin_id_      = this->id();
   __seg->id_          = __segment_id;
   return __seg;
 }
 
 int
-static_bin::free(std::shared_ptr<base_segment> segment) noexcept
+static_bin::free(std::shared_ptr<stat_segment> segment) noexcept
 {
   if (segment == nullptr) {
-    return -1;
-  }
-  // check if the segment type is statbin_segment
-  if (segment->type_ != SEG_TYPE::statbin_segment) {
     return -1;
   }
   // check if the segment is malloc in this bin

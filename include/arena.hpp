@@ -32,8 +32,15 @@ public:
   arena(std::string name);
   explicit arena() = delete;
   ~arena();
-  std::shared_ptr<base_segment> allocate(const size_t nbytes);
-  void             deallocate(std::shared_ptr<base_segment> segment);
+
+  std::shared_ptr<stat_segment> _STATIC_ALLOC(const size_t nbytes);
+  std::shared_ptr<inst_segment> _INSTANT_ALLOC(const size_t nbytes);
+  std::shared_ptr<cach_segment> _CACHE_ALLOC(const size_t nbytes);
+
+  void _STATIC_DEALLOC(std::shared_ptr<stat_segment>);
+  void _INSTANT_DEALLOC(std::shared_ptr<inst_segment>);
+  void _CACHE_DEALLOC(std::shared_ptr<cach_segment>);
+
   std::string_view name() noexcept;
   size_t           batch_count() noexcept;
 };

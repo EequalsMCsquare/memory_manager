@@ -27,10 +27,10 @@ TEST_CASE("transfering data", "[malloc]")
   // create cache bin
   libmem::cache_bin bin(0, counter, arena_name, 1_KB);
   // create a promse
-  std::promise<std::shared_ptr<libmem::base_segment>> buffarea_descriptor;
+  std::promise<std::shared_ptr<libmem::cach_segment>> buffarea_descriptor;
 
   auto rv      = bin.async_malloc(sizeof(src_arr), buffarea_descriptor);
   auto segment = buffarea_descriptor.get_future().get();
   auto shm     = bin.get_shmhdl();
-  auto addr    = shm->map()
+  auto addr    = shm->map();
 }

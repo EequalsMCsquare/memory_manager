@@ -17,24 +17,60 @@ struct base_segment
 {
   std::string_view arena_name_;
   size_t           id_;
-  size_t           batch_id_;
-  SEG_TYPE         type_;
-  size_t           bin_id_;
   size_t           size_;
-  size_t           addr_pshift_;
+};
+
+/**
+ * @brief segment allocated by cache bin
+ *
+ */
+struct cach_segment : base_segment
+{
+  inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
+  size_t                 condv_pshift_;
+  size_t                 buff_pshift_;
+};
+
+struct inst_segment : base_segment
+{
+  inline static SEG_TYPE type = SEG_TYPE::instbin_segment;
+};
+
+struct stat_segment : base_segment
+{
+  inline static SEG_TYPE type = SEG_TYPE::statbin_segment;
+  size_t                 batch_id_;
+  size_t                 bin_id_;
+  size_t                 addr_pshift_;
 };
 
 struct segmentdesc
 {
-  char           arena_name[256];
-  const SEG_TYPE seg_type;
-  const size_t   segment_id;
-  const size_t   batch_id;
-  const size_t   bin_id;
-  const size_t   segment_size;
-  const size_t   start_pshift;
+  char     arena_name[256];
+  SEG_TYPE seg_type;
+  size_t   segment_id;
+  size_t   segment_size;
+  union
+  {
+    size_t addr_pshift;
+    size_t buff_pshift;
+  };
+  union
+  {
+    size_t batch_id;
+    size_t condv_pshift;
+  };
+  union
+  {
+    size_t    bin_id;
+    std::byte __XXXXX_RESERVE__[sizeof(size_t)];
+  };
 
-  explicit segmentdesc(const base_segment& seg);
+  explicit segmentdesc(const cach_segment& seg);
+
+  explicit segmentdesc(const stat_segment& seg);
+
+  explicit segmentdesc(const inst_segment& seg);
 
   std::string shmhdl_name() noexcept;
 };

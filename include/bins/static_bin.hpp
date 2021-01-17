@@ -30,7 +30,6 @@ protected:
   inline const size_t chunk_req(const size_t& nbytes) noexcept;
 
   std::vector<bool>::iterator first_fit(const size_t& nbytes) noexcept;
-  // TODO: best fit
 
 public:
   explicit static_bin(const size_t        id,
@@ -39,7 +38,7 @@ public:
                       const size_t&       chunk_count,
                       const size_t&       base_pshift);
 
-  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept;
+  std::shared_ptr<stat_segment> malloc(const size_t nbytes) noexcept;
 
   /**
    * @brief if free success, 0 will be returned.
@@ -49,7 +48,7 @@ public:
    * @param std::shared_ptr<base_segment>
    * @return int
    */
-  int free(std::shared_ptr<base_segment> segment) noexcept;
+  int free(std::shared_ptr<stat_segment> segment) noexcept;
 
   void clear() noexcept;
 

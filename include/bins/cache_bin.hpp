@@ -42,6 +42,7 @@ protected:
   std::array<std::mutex, BUFF_AREA_COUNT>               area_mtx_;
   std::map<size_t, void*>                               data_map_;
   const size_t buffarea_pshift(const uint32_t idx) const noexcept;
+  const size_t condv_pshift(const uint32_t idx) const noexcept;
 
 public:
   explicit cache_bin(const size_t        id,
@@ -51,13 +52,13 @@ public:
 
   std::future<int> async_malloc(
     const size_t                                 nbytes,
-    std::promise<std::shared_ptr<base_segment>>& segment) noexcept;
+    std::promise<std::shared_ptr<cach_segment>>& segment) noexcept;
 
   std::future<int> async_retrieve(
-    std::shared_ptr<base_segment>                segment,
-    std::promise<std::shared_ptr<base_segment>>& result) noexcept;
+    std::shared_ptr<cach_segment>                segment,
+    std::promise<std::shared_ptr<cach_segment>>& result) noexcept;
 
-  int free(std::shared_ptr<base_segment> segment) noexcept;
+  int free(std::shared_ptr<cach_segment> segment) noexcept;
 
   void clear() noexcept;
 

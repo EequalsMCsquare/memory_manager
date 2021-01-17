@@ -1,16 +1,15 @@
 #include "bins/instant_bin.hpp"
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
 
 namespace shm_kernel::memory_manager {
-instant_bin::instant_bin(const size_t        id,
-                         std::atomic_size_t& segment_counter,
+instant_bin::instant_bin(std::atomic_size_t& segment_counter,
                          std::string_view    arena_name)
-  : id_(id)
-  , segment_counter_ref_(segment_counter)
+  : segment_counter_ref_(segment_counter)
   , arena_name_(arena_name)
 {}
 
-std::shared_ptr<base_segment>
+std::shared_ptr<inst_segment>
 instant_bin::malloc(const size_t nbytes) noexcept
 {
   size_t                      __tmp = this->segment_counter_ref_++;
@@ -20,28 +19,24 @@ instant_bin::malloc(const size_t nbytes) noexcept
     __tmp,
     std::make_shared<shared_memory::shm_handle>(
       fmt::format("{}#instbin#seg{}", arena_name_, __tmp), nbytes)));
-  auto __seg          = std::make_shared<base_segment>();
-  __seg->addr_pshift_ = 0;
-  __seg->id_          = __tmp;
-  __seg->size_        = nbytes;
-  __seg->arena_name_  = this->arena_name_;
-  __seg->type_        = SEG_TYPE::instbin_segment;
-  __seg->bin_id_      = this->id();
+  auto __seg         = std::make_shared<inst_segment>();
+  __seg->arena_name_ = this->arena_name_;
+  __seg->id_         = __tmp;
+  __seg->size_       = nbytes;
 
   return std::move(__seg);
 }
 
 int
-instant_bin::free(std::shared_ptr<base_segment> segment) noexcept
+instant_bin::free(std::shared_ptr<inst_segment> segment) noexcept
 {
-  if (segment->type_ != SEG_TYPE::instbin_segment) {
-    return -1;
-  }
-  if (segment->bin_id_ != this->id()) {
+  if (segment->arena_name_ != this->arena_name_) {
+    spdlog::error("segment's arena name does not match current bin's");
     return -1;
   }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
-  auto                        __pair = this->segments_.find(segment->id_);
+
+  auto __pair = this->segments_.find(segment->id_);
   if (__pair == this->segments_.end()) {
     return -1;
   }
@@ -53,11 +48,6 @@ void
 instant_bin::clear() noexcept
 {
   this->segments_.clear();
-}
-const size_t
-instant_bin::id() noexcept
-{
-  return this->id_;
 }
 const size_t
 instant_bin::shmhdl_count() noexcept

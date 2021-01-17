@@ -41,25 +41,21 @@ TEST_CASE("allocate with successful return", "[malloc]")
   REQUIRE(seg1);
   REQUIRE(seg1->addr_pshift_ == 0);
   REQUIRE(seg1->size_ == 128);
-  REQUIRE(seg1->type_ == libmem::SEG_TYPE::statbin_segment);
 
   auto seg2 = bin.malloc(128);
   REQUIRE(seg2);
   REQUIRE(seg2->addr_pshift_ == 128);
   REQUIRE(seg2->size_ == 128);
-  REQUIRE(seg2->type_ == libmem::SEG_TYPE::statbin_segment);
 
   auto seg3 = bin.malloc(256);
   REQUIRE(seg3);
   REQUIRE(seg3->addr_pshift_ == 256);
   REQUIRE(seg3->size_ == 256);
-  REQUIRE(seg3->type_ == libmem::SEG_TYPE::statbin_segment);
 
   auto seg4 = bin.malloc(512);
   REQUIRE(seg4);
   REQUIRE(seg4->addr_pshift_ == 512);
   REQUIRE(seg4->size_ == 512);
-  REQUIRE(seg4->type_ == libmem::SEG_TYPE::statbin_segment);
 }
 
 TEST_CASE("allocate with error return", "[malloc]")
@@ -126,8 +122,7 @@ TEST_CASE("ilegal range segment free error", "[free]")
 {
   libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
-  auto __seg   = std::make_shared<libmem::base_segment>();
-  __seg->type_ = libmem::SEG_TYPE::statbin_segment;
+  auto __seg = std::make_shared<libmem::stat_segment>();
 
   // ilegal ptr
   __seg->addr_pshift_ = 400;
@@ -163,8 +158,7 @@ TEST_CASE("double free error", "[free]")
   libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
 
-  auto __seg   = std::make_shared<libmem::base_segment>();
-  __seg->type_ = libmem::SEG_TYPE::statbin_segment;
+  auto __seg = std::make_shared<libmem::stat_segment>();
   // double free
   __seg->addr_pshift_ = 0;
   __seg->size_        = 128;

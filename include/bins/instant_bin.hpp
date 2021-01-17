@@ -13,28 +13,24 @@ namespace shm_kernel::memory_manager {
 class instant_bin
 {
 protected:
-  const size_t        id_;
   std::atomic_size_t& segment_counter_ref_;
   std::mutex          mtx_;
   std::string_view    arena_name_;
   std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
 
 public:
-  explicit instant_bin(const size_t        id,
-                       std::atomic_size_t& segment_counter,
+  explicit instant_bin(std::atomic_size_t& segment_counter,
                        std::string_view    arena_name);
 
   instant_bin() = delete;
 
   instant_bin(const instant_bin&) = delete;
 
-  std::shared_ptr<base_segment> malloc(const size_t nbytes) noexcept;
+  std::shared_ptr<inst_segment> malloc(const size_t nbytes) noexcept;
 
-  int free(std::shared_ptr<base_segment> segment) noexcept;
+  int free(std::shared_ptr<inst_segment> segment) noexcept;
 
   void clear() noexcept;
-
-  const size_t id() noexcept;
 
   const size_t shmhdl_count() noexcept;
 

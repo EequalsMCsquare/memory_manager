@@ -2,6 +2,7 @@
 #include "segment.hpp"
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -61,7 +62,7 @@ cache_bin::cache_bin(const size_t        id,
 std::future<int>
 cache_bin::async_malloc(
   const size_t                                 nbytes,
-  std::promise<std::shared_ptr<base_segment>>& segment) noexcept
+  std::promise<std::shared_ptr<cach_segment>>& segment) noexcept
 {
   // 思路:
   //    1. client 发送 < 1_KB的 allocate 请求
@@ -84,16 +85,15 @@ cache_bin::async_malloc(
           // this area is free
           this->free_area_count_--;
           auto       __tmp = this->segment_counter_ref_++;
-          auto       __seg = std::make_shared<base_segment>();
+          auto       __seg = std::make_shared<cach_segment>();
           std::mutex __tmp_mtx;
-          __seg->arena_name_  = this->arena_name_;
-          __seg->type_        = SEG_TYPE::cachbin_segment;
-          __seg->size_        = nbytes;
-          __seg->addr_pshift_ = buffarea_pshift(i);
-          __seg->id_          = __tmp;
-          __seg->bin_id_ =
-            // set promise
-            segment.set_value(__seg);
+          __seg->arena_name_   = this->arena_name_;
+          __seg->size_         = nbytes;
+          __seg->buff_pshift_  = buffarea_pshift(i);
+          __seg->condv_pshift_ = condv_pshift(i);
+          __seg->id_           = __tmp;
+          // set promise
+          segment.set_value(__seg);
           // allocate heap
           void* __heap_buffer = this->pmr_pool_.allocate(nbytes);
           if (__heap_buffer == nullptr) {
@@ -125,16 +125,9 @@ cache_bin::async_malloc(
 
 std::future<int>
 cache_bin::async_retrieve(
-  std::shared_ptr<base_segment>                segment,
-  std::promise<std::shared_ptr<base_segment>>& result) noexcept
+  std::shared_ptr<cach_segment>                segment,
+  std::promise<std::shared_ptr<cach_segment>>& result) noexcept
 {
-  // check segment
-  if (segment->type_ != SEG_TYPE::cachbin_segment) {
-    spdlog::error("expect segment->type_ = {}, but received {}",
-                  SEG_TYPE::cachbin_segment,
-                  segment->type_);
-    return std::async(std::launch::async, []() { return -1; });
-  }
   if (segment->size_ == 0) {
     spdlog::error("invalid segmen size!");
     return std::async(std::launch::async, []() { return -1; });
@@ -158,15 +151,15 @@ cache_bin::async_retrieve(
             return -1;
           }
           // when the area is free
-          auto       __result_seg = std::make_shared<base_segment>();
+          auto       __result_seg = std::make_shared<cach_segment>();
           std::mutex __tmp_mtx;
           std::unique_lock<std::mutex> __ulock(__tmp_mtx);
           // init result segment
-          __result_seg->arena_name_  = this->arena_name_;
-          __result_seg->type_        = SEG_TYPE::cachbin_segment;
-          __result_seg->size_        = segment->size_;
-          __result_seg->addr_pshift_ = this->buffarea_pshift(i);
-          __result_seg->id_          = __iter->first;
+          __result_seg->arena_name_   = this->arena_name_;
+          __result_seg->size_         = segment->size_;
+          __result_seg->buff_pshift_  = buffarea_pshift(i);
+          __result_seg->condv_pshift_ = condv_pshift(i);
+          __result_seg->id_           = __iter->first;
           // copy data to buff area from heap
           std::memcpy(this->area_buff_[i], __iter->second, segment->size_);
           // fulfill promise
@@ -185,15 +178,8 @@ cache_bin::async_retrieve(
 }
 
 int
-cache_bin::free(std::shared_ptr<base_segment> segment) noexcept
+cache_bin::free(std::shared_ptr<cach_segment> segment) noexcept
 {
-  // check segment
-  if (segment->type_ != SEG_TYPE::cachbin_segment) {
-    spdlog::error("expect segment->type_ = {}, but received {}",
-                  SEG_TYPE::cachbin_segment,
-                  segment->type_);
-    return -1;
-  }
   // find ptr by segment->id_
   auto __iter = this->data_map_.find(segment->id_);
   if (__iter == this->data_map_.end()) {
@@ -225,6 +211,12 @@ cache_bin::buffarea_pshift(const uint32_t idx) const noexcept
 {
   return BUFF_AREA_COUNT * sizeof(std::condition_variable) +
          this->max_segsz_ * idx;
+}
+
+const size_t
+cache_bin::condv_pshift(const uint32_t idx) const noexcept
+{
+  return idx * sizeof(std::condition_variable);
 }
 
 const size_t

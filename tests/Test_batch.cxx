@@ -28,7 +28,6 @@ TEST_CASE("allocate a segment", "[allocate]")
   REQUIRE(std::strcmp("test_arena2", seg1->arena_name_.data()) == 0);
   REQUIRE(seg1->id_ == 0);
   REQUIRE(seg1->size_ == 16_KB);
-  REQUIRE(seg1->type_ == libmem::SEG_TYPE::statbin_segment);
   REQUIRE(seg1->bin_id_ == 0);
 
   auto seg2 = batch.allocate(20_KB);
@@ -36,7 +35,6 @@ TEST_CASE("allocate a segment", "[allocate]")
   REQUIRE(std::strcmp("test_arena2", seg2->arena_name_.data()) == 0);
   REQUIRE(seg2->id_ == 1);
   REQUIRE(seg2->size_ == 20_KB);
-  REQUIRE(seg2->type_ == libmem::SEG_TYPE::statbin_segment);
   REQUIRE(seg2->bin_id_ == 2);
 
   auto seg3 = batch.allocate(28_KB);
@@ -44,7 +42,6 @@ TEST_CASE("allocate a segment", "[allocate]")
   REQUIRE(std::strcmp("test_arena2", seg3->arena_name_.data()) == 0);
   REQUIRE(seg3->id_ == 2);
   REQUIRE(seg3->size_ == 28_KB);
-  REQUIRE(seg3->type_ == libmem::SEG_TYPE::statbin_segment);
   REQUIRE(seg3->bin_id_ == 3);
 
   auto seg4 = batch.allocate(32_KB);
@@ -52,7 +49,6 @@ TEST_CASE("allocate a segment", "[allocate]")
   REQUIRE(std::strcmp("test_arena2", seg4->arena_name_.data()) == 0);
   REQUIRE(seg4->id_ == 3);
   REQUIRE(seg4->size_ == 32_KB);
-  REQUIRE(seg4->type_ == libmem::SEG_TYPE::statbin_segment);
 
   REQUIRE_THROWS(batch.allocate(128_KB * 8));
   REQUIRE_THROWS(batch.allocate(2_MB));

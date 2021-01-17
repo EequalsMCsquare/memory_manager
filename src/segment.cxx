@@ -5,13 +5,32 @@
 
 namespace shm_kernel::memory_manager {
 
-segmentdesc::segmentdesc(const base_segment& seg)
-  : segment_id(seg.id_)
+segmentdesc::segmentdesc(const stat_segment& seg)
+  : seg_type(seg.type)
+  , segment_id(seg.id_)
+  , segment_size(seg.size_)
+  , addr_pshift(seg.addr_pshift_)
   , batch_id(seg.batch_id_)
   , bin_id(seg.bin_id_)
+{
+  std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
+}
+
+segmentdesc::segmentdesc(const inst_segment& seg)
+  : seg_type(seg.type)
+  , segment_id(seg.id_)
   , segment_size(seg.size_)
-  , start_pshift(seg.addr_pshift_)
-  , seg_type(seg.type_)
+  , addr_pshift(0)
+{
+  std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
+}
+
+segmentdesc::segmentdesc(const cach_segment& seg)
+  : seg_type(seg.type)
+  , segment_id(seg.id_)
+  , segment_size(seg.size_)
+  , buff_pshift(seg.buff_pshift_)
+  , condv_pshift(seg.condv_pshift_)
 {
   std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
 }

@@ -73,7 +73,7 @@ public:
    * @param nbytes
    * @return std::shared_ptr<base_segment>
    */
-  std::shared_ptr<base_segment> allocate(const size_t nbytes);
+  std::shared_ptr<stat_segment> allocate(const size_t nbytes);
 
   /**
    * @brief deallocate a shared memory segment
@@ -81,7 +81,7 @@ public:
    * @param segment
    * @return int
    */
-  int deallocate(std::shared_ptr<base_segment> segment) noexcept;
+  int deallocate(std::shared_ptr<stat_segment> segment) noexcept;
 
   std::string_view arena_name() noexcept;
   const size_t     id() noexcept;
