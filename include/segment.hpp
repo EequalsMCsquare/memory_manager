@@ -47,7 +47,7 @@ struct stat_segment : base_segment
 struct segmentdesc
 {
   char     arena_name[256];
-  SEG_TYPE seg_type;
+  SEG_TYPE seg_type_;
   size_t   segment_id;
   size_t   segment_size;
   union
