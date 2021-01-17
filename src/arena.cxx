@@ -1,4 +1,5 @@
 #include "arena.hpp"
+#include "bins/cache_bin.hpp"
 #include "bins/instant_bin.hpp"
 #include "mem_literals.hpp"
 #include "segment.hpp"
@@ -59,7 +60,6 @@ void
 arena::init_cache_bin()
 {
   spdlog::trace("initializing cache bin...");
-
   // TODO:
   spdlog::trace("cache bin initialized!");
 }
