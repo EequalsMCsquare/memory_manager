@@ -2,6 +2,7 @@
 #include "segment.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <exception>
 #include <fmt/format.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -15,19 +16,22 @@ is_aligned(const size_t& num)
   return num % ALIGNMENT == 0;
 }
 
-batch::batch(std::string_view arena_name, const size_t& id)
+batch::batch(std::string_view    arena_name,
+             const size_t&       id,
+             std::atomic_size_t& segment_counter)
   : arena_name_(arena_name)
   , id_(id)
-  , segment_counter_(0)
+  , segment_counter_ref_(segment_counter)
 {
   spdlog::info("initializing {}/batch{}", arena_name_, id_);
 }
 
 batch::batch(std::string_view           arena_name,
              const size_t&              id,
+             std::atomic_size_t&        segment_counter,
              const std::vector<size_t>& statbin_chunksz,
              const std::vector<size_t>& statbin_chunkcnt)
-  : batch(arena_name, id)
+  : batch(arena_name, id, segment_counter)
 {
   if (statbin_chunkcnt.size() == 0) {
     spdlog::critical("empty static bin chunk count is not allowed!");
@@ -50,13 +54,14 @@ batch::batch(std::string_view           arena_name,
   spdlog::info("{}/batch{} initializing complete.", arena_name_, id_);
 }
 
-batch::batch(std::string_view arena_name,
-             const size_t&    id,
-             const size_t&    statbin_minchunksz,
-             const size_t&    statbin_maxchunksz,
-             const size_t&    step,
-             const size_t&    statbin_size)
-  : batch(arena_name, id)
+batch::batch(std::string_view    arena_name,
+             const size_t&       id,
+             std::atomic_size_t& segment_counter,
+             const size_t&       statbin_minchunksz,
+             const size_t&       statbin_maxchunksz,
+             const size_t&       step,
+             const size_t&       statbin_size)
+  : batch(arena_name, id, segment_counter)
 {
   if (statbin_minchunksz > statbin_maxchunksz) {
     throw std::invalid_argument(
@@ -85,10 +90,12 @@ batch::batch(std::string_view arena_name,
 
 batch::batch(std::string_view           arena_name,
              const size_t&              id,
+             std::atomic_size_t&        segment_counter,
              const std::vector<size_t>& statbin_chunksz,
              const size_t&              statbin_chunkcnt)
   : batch(arena_name,
           id,
+          segment_counter,
           statbin_chunksz,
           std::vector<size_t>(statbin_chunksz.size(), statbin_chunkcnt))
 {}
@@ -119,7 +126,7 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
     }
     this->static_bins_.push_back(
       std::make_unique<static_bin>(__idx++,
-                                   this->segment_counter_,
+                                   this->segment_counter_ref_,
                                    *__sz_iter,
                                    *__cnt_iter,
                                    __current_pshift));

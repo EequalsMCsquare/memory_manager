@@ -7,7 +7,7 @@ namespace libmem = shm_kernel::memory_manager;
 TEST_CASE("create a batch", "[create]")
 {
   std::atomic_size_t segment_counter{ 0 };
-  libmem::batch      batch("test_arena", 1, 4_KB, 128_KB, 8_KB, 64);
+  libmem::batch batch("test_arena", 1, segment_counter, 4_KB, 128_KB, 8_KB, 64);
   std::cout << "batch total bytes: " << batch.total_bytes() / 1024 / 1024
             << " MB" << std::endl;
   REQUIRE(batch.min_chunksz() == 4_KB);
@@ -18,7 +18,8 @@ TEST_CASE("create a batch", "[create]")
 TEST_CASE("allocate a segment", "[allocate]")
 {
   std::atomic_size_t segment_counter{ 0 };
-  libmem::batch      batch("test_arena2", 1, 4_KB, 128_KB, 8_KB, 64);
+  libmem::batch      batch(
+    "test_arena2", 1, segment_counter, 4_KB, 128_KB, 8_KB, 64);
   REQUIRE(batch.min_chunksz() == 4_KB);
   REQUIRE(batch.max_chunksz() <= 256_KB);
   REQUIRE(batch.id() == 1);
@@ -57,7 +58,7 @@ TEST_CASE("allocate a segment", "[allocate]")
 TEST_CASE("deallocate a segment", "[deallocate]")
 {
   std::atomic_size_t segment_count{ 0 };
-  libmem::batch      batch("test_arena3", 1, 4_KB, 128_KB, 8_KB, 64);
+  libmem::batch batch("test_arena3", 1, segment_count, 4_KB, 128_KB, 8_KB, 64);
 
   auto seg1 = batch.allocate(128_KB);
   REQUIRE(batch.deallocate(seg1) == 0);

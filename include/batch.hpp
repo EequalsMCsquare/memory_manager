@@ -21,10 +21,10 @@ class batch
   friend class fmt::formatter<batch>;
 
 private:
-  std::string_view   arena_name_;
-  const size_t       id_;
-  size_t             total_bytes_;
-  std::atomic_size_t segment_counter_;
+  std::string_view    arena_name_;
+  const size_t        id_;
+  size_t              total_bytes_;
+  std::atomic_size_t& segment_counter_ref_;
 
   std::unique_ptr<shared_memory::shm_handle> handle_;
   std::vector<std::unique_ptr<static_bin>>   static_bins_;
@@ -36,7 +36,9 @@ private:
    */
   void init_shm(const size_t& buffsz);
 
-  explicit batch(std::string_view arena_name, const size_t& id);
+  explicit batch(std::string_view    arena_name,
+                 const size_t&       id,
+                 std::atomic_size_t& segment_counter);
   /**
    * @brief
    *
@@ -50,18 +52,21 @@ private:
 public:
   explicit batch(std::string_view           arena_name,
                  const size_t&              id,
+                 std::atomic_size_t&        segment_counter,
                  const std::vector<size_t>& statbin_chunksz,
                  const std::vector<size_t>& statbin_chunkcnt);
 
-  explicit batch(std::string_view arena_name,
-                 const size_t&    id,
-                 const size_t&    statbin_minchunksz,
-                 const size_t&    statbin_maxchunksz,
-                 const size_t&    step,
-                 const size_t&    statbin_size);
+  explicit batch(std::string_view    arena_name,
+                 const size_t&       id,
+                 std::atomic_size_t& segment_counter,
+                 const size_t&       statbin_minchunksz,
+                 const size_t&       statbin_maxchunksz,
+                 const size_t&       step,
+                 const size_t&       statbin_size);
 
   explicit batch(std::string_view           arena_name,
                  const size_t&              id,
+                 std::atomic_size_t&        segment_counter,
                  const std::vector<size_t>& statbin_chunksz,
                  const size_t&              statbin_chunkcnt);
 
