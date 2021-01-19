@@ -29,7 +29,6 @@ class cache_bin
 {
 
 protected:
-  const size_t                                          id_;
   std::atomic_size_t&                                   segment_counter_ref_;
   std::mutex                                            mtx_;
   std::pmr::unsynchronized_pool_resource                pmr_pool_;
@@ -45,8 +44,7 @@ protected:
   const size_t condv_pshift(const uint32_t idx) const noexcept;
 
 public:
-  explicit cache_bin(const size_t        id,
-                     std::atomic_size_t& segment_counter,
+  explicit cache_bin(std::atomic_size_t& segment_counter,
                      std::string_view    arena_name,
                      const size_t&       max_segsz);
 
@@ -61,8 +59,6 @@ public:
   int free(std::shared_ptr<cach_segment> segment) noexcept;
 
   void clear() noexcept;
-
-  const size_t id() const noexcept;
 
   const size_t total_areas() const noexcept;
 

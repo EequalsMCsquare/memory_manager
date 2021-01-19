@@ -13,8 +13,7 @@ std::string        arena_name{ "test_arena" };
 
 TEST_CASE("create cache_bin", "[create]")
 {
-  libmem::cache_bin bin(0, counter, arena_name, 1_KB);
-  REQUIRE(bin.id() == 0);
+  libmem::cache_bin bin(counter, arena_name, 1_KB);
   REQUIRE(bin.area_size() == 1_KB);
   REQUIRE(bin.total_areas() == shm_kernel::memory_manager::BUFF_AREA_COUNT);
   REQUIRE(bin.free_areas() == shm_kernel::memory_manager::BUFF_AREA_COUNT);
@@ -25,7 +24,7 @@ TEST_CASE("transfering data", "[malloc]")
   // create c++ style array
   std::array<double, 10> src_arr{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
   // create cache bin
-  libmem::cache_bin bin(0, counter, arena_name, 1_KB);
+  libmem::cache_bin bin(counter, arena_name, 1_KB);
   // create a promse
   std::promise<std::shared_ptr<libmem::cach_segment>> buffarea_descriptor;
 

@@ -19,13 +19,11 @@ namespace shm_kernel::memory_manager {
 
 using namespace std::chrono_literals;
 
-cache_bin::cache_bin(const size_t        id,
-                     std::atomic_size_t& segment_counter,
+cache_bin::cache_bin(std::atomic_size_t& segment_counter,
                      std::string_view    arena_name,
                      const size_t&       max_segsz)
 
-  : id_(id)
-  , segment_counter_ref_(segment_counter)
+  : segment_counter_ref_(segment_counter)
   , max_segsz_(max_segsz)
   , arena_name_(arena_name)
   , free_area_count_(BUFF_AREA_COUNT)
@@ -201,11 +199,7 @@ cache_bin::clear() noexcept
   this->data_map_.clear();
   this->pmr_pool_.release();
 }
-const size_t
-cache_bin::id() const noexcept
-{
-  return this->id_;
-}
+
 const size_t
 cache_bin::buffarea_pshift(const uint32_t idx) const noexcept
 {

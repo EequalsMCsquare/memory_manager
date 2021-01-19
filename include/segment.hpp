@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <fmt/format.h>
 #include <string_view>
 
 namespace shm_kernel::memory_manager {
