@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fmt/format.h>
+#include <pstl/glue_algorithm_defs.h>
 
 namespace shm_kernel::memory_manager {
 
@@ -29,7 +30,7 @@ segmentdesc::segmentdesc(const cache_segment& seg)
   : seg_type_(seg.type)
   , segment_id(seg.id_)
   , segment_size(seg.size_)
-  , buff_pshift(seg.buff_pshift_)
+  , addr_pshift(seg.addr_pshift_)
   , condv_pshift(seg.condv_pshift_)
 {
   std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
@@ -49,6 +50,23 @@ segmentdesc::shmhdl_name() noexcept
   return {};
 }
 
+segmentdesc
+cache_segment::to_segmentdesc() const noexcept
+{
+  return std::move(segmentdesc(*this));
+}
+
+segmentdesc
+instant_segment::to_segmentdesc() const noexcept
+{
+  return std::move(segmentdesc(*this));
+}
+
+segmentdesc
+static_segment::to_segmentdesc() const noexcept
+{
+  return std::move(segmentdesc(*this));
+}
 }
 
 // template<typename FormatContext>

@@ -5,6 +5,8 @@
 
 namespace shm_kernel::memory_manager {
 
+struct segmentdesc;
+
 enum class SEG_TYPE
 {
   statbin_segment = 1,
@@ -17,6 +19,8 @@ struct base_segment
   std::string_view arena_name_;
   size_t           id_;
   size_t           size_;
+
+  virtual segmentdesc to_segmentdesc() const noexcept = 0;
 };
 
 /**
@@ -27,12 +31,15 @@ struct cache_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
   size_t                 condv_pshift_;
-  size_t                 buff_pshift_;
+  size_t                 addr_pshift_;
+  segmentdesc            to_segmentdesc() const noexcept override;
 };
 
 struct instant_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::instbin_segment;
+
+  segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct static_segment : base_segment
@@ -41,6 +48,8 @@ struct static_segment : base_segment
   size_t                 batch_id_;
   size_t                 bin_id_;
   size_t                 addr_pshift_;
+
+  segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct segmentdesc
@@ -49,11 +58,7 @@ struct segmentdesc
   SEG_TYPE seg_type_;
   size_t   segment_id;
   size_t   segment_size;
-  union
-  {
-    size_t addr_pshift;
-    size_t buff_pshift;
-  };
+  size_t   addr_pshift;
   union
   {
     size_t batch_id;

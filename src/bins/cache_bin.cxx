@@ -87,7 +87,7 @@ cache_bin::async_malloc(
           std::mutex __tmp_mtx;
           __seg->arena_name_   = this->arena_name_;
           __seg->size_         = nbytes;
-          __seg->buff_pshift_  = buffarea_pshift(i);
+          __seg->addr_pshift_  = buffarea_pshift(i);
           __seg->condv_pshift_ = condv_pshift(i);
           __seg->id_           = __tmp;
           // set promise
@@ -155,7 +155,7 @@ cache_bin::async_retrieve(
           // init result segment
           __result_seg->arena_name_   = this->arena_name_;
           __result_seg->size_         = segment->size_;
-          __result_seg->buff_pshift_  = buffarea_pshift(i);
+          __result_seg->addr_pshift_  = buffarea_pshift(i);
           __result_seg->condv_pshift_ = condv_pshift(i);
           __result_seg->id_           = __iter->first;
           // copy data to buff area from heap
