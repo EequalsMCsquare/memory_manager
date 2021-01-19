@@ -26,9 +26,9 @@ public:
 
   instant_bin(const instant_bin&) = delete;
 
-  std::shared_ptr<inst_segment> malloc(const size_t nbytes) noexcept;
+  std::shared_ptr<instant_segment> malloc(const size_t nbytes) noexcept;
 
-  int free(std::shared_ptr<inst_segment> segment) noexcept;
+  int free(std::shared_ptr<instant_segment> segment) noexcept;
 
   void clear() noexcept;
 

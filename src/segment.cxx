@@ -5,7 +5,7 @@
 
 namespace shm_kernel::memory_manager {
 
-segmentdesc::segmentdesc(const stat_segment& seg)
+segmentdesc::segmentdesc(const static_segment& seg)
   : seg_type_(seg.type)
   , segment_id(seg.id_)
   , segment_size(seg.size_)
@@ -16,7 +16,7 @@ segmentdesc::segmentdesc(const stat_segment& seg)
   std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
 }
 
-segmentdesc::segmentdesc(const inst_segment& seg)
+segmentdesc::segmentdesc(const instant_segment& seg)
   : seg_type_(seg.type)
   , segment_id(seg.id_)
   , segment_size(seg.size_)
@@ -25,7 +25,7 @@ segmentdesc::segmentdesc(const inst_segment& seg)
   std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
 }
 
-segmentdesc::segmentdesc(const cach_segment& seg)
+segmentdesc::segmentdesc(const cache_segment& seg)
   : seg_type_(seg.type)
   , segment_id(seg.id_)
   , segment_size(seg.size_)

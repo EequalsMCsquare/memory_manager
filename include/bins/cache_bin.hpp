@@ -49,14 +49,14 @@ public:
                      const size_t&       max_segsz);
 
   std::future<int> async_malloc(
-    const size_t                                 nbytes,
-    std::promise<std::shared_ptr<cach_segment>>& segment) noexcept;
+    const size_t                                  nbytes,
+    std::promise<std::shared_ptr<cache_segment>>& segment) noexcept;
 
   std::future<int> async_retrieve(
-    std::shared_ptr<cach_segment>                segment,
-    std::promise<std::shared_ptr<cach_segment>>& result) noexcept;
+    std::shared_ptr<cache_segment>                segment,
+    std::promise<std::shared_ptr<cache_segment>>& result) noexcept;
 
-  int free(std::shared_ptr<cach_segment> segment) noexcept;
+  int free(std::shared_ptr<cache_segment> segment) noexcept;
 
   void clear() noexcept;
 

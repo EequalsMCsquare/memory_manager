@@ -23,19 +23,19 @@ struct base_segment
  * @brief segment allocated by cache bin
  *
  */
-struct cach_segment : base_segment
+struct cache_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
   size_t                 condv_pshift_;
   size_t                 buff_pshift_;
 };
 
-struct inst_segment : base_segment
+struct instant_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::instbin_segment;
 };
 
-struct stat_segment : base_segment
+struct static_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::statbin_segment;
   size_t                 batch_id_;
@@ -65,11 +65,11 @@ struct segmentdesc
     std::byte __XXXXX_RESERVE__[sizeof(size_t)];
   };
 
-  explicit segmentdesc(const cach_segment& seg);
+  explicit segmentdesc(const cache_segment& seg);
 
-  explicit segmentdesc(const stat_segment& seg);
+  explicit segmentdesc(const static_segment& seg);
 
-  explicit segmentdesc(const inst_segment& seg);
+  explicit segmentdesc(const instant_segment& seg);
 
   std::string shmhdl_name() noexcept;
 };

@@ -59,8 +59,8 @@ cache_bin::cache_bin(std::atomic_size_t& segment_counter,
 
 std::future<int>
 cache_bin::async_malloc(
-  const size_t                                 nbytes,
-  std::promise<std::shared_ptr<cach_segment>>& segment) noexcept
+  const size_t                                  nbytes,
+  std::promise<std::shared_ptr<cache_segment>>& segment) noexcept
 {
   // 思路:
   //    1. client 发送 < 1_KB的 allocate 请求
@@ -83,7 +83,7 @@ cache_bin::async_malloc(
           // this area is free
           this->free_area_count_--;
           auto       __tmp = this->segment_counter_ref_++;
-          auto       __seg = std::make_shared<cach_segment>();
+          auto       __seg = std::make_shared<cache_segment>();
           std::mutex __tmp_mtx;
           __seg->arena_name_   = this->arena_name_;
           __seg->size_         = nbytes;
@@ -123,8 +123,8 @@ cache_bin::async_malloc(
 
 std::future<int>
 cache_bin::async_retrieve(
-  std::shared_ptr<cach_segment>                segment,
-  std::promise<std::shared_ptr<cach_segment>>& result) noexcept
+  std::shared_ptr<cache_segment>                segment,
+  std::promise<std::shared_ptr<cache_segment>>& result) noexcept
 {
   if (segment->size_ == 0) {
     spdlog::error("invalid segmen size!");
@@ -149,7 +149,7 @@ cache_bin::async_retrieve(
             return -1;
           }
           // when the area is free
-          auto       __result_seg = std::make_shared<cach_segment>();
+          auto       __result_seg = std::make_shared<cache_segment>();
           std::mutex __tmp_mtx;
           std::unique_lock<std::mutex> __ulock(__tmp_mtx);
           // init result segment
@@ -176,7 +176,7 @@ cache_bin::async_retrieve(
 }
 
 int
-cache_bin::free(std::shared_ptr<cach_segment> segment) noexcept
+cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
 {
   // find ptr by segment->id_
   auto __iter = this->data_map_.find(segment->id_);

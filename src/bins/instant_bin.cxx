@@ -9,7 +9,7 @@ instant_bin::instant_bin(std::atomic_size_t& segment_counter,
   , arena_name_(arena_name)
 {}
 
-std::shared_ptr<inst_segment>
+std::shared_ptr<instant_segment>
 instant_bin::malloc(const size_t nbytes) noexcept
 {
   size_t                      __tmp = this->segment_counter_ref_++;
@@ -19,7 +19,7 @@ instant_bin::malloc(const size_t nbytes) noexcept
     __tmp,
     std::make_shared<shared_memory::shm_handle>(
       fmt::format("{}#instbin#seg{}", arena_name_, __tmp), nbytes)));
-  auto __seg         = std::make_shared<inst_segment>();
+  auto __seg         = std::make_shared<instant_segment>();
   __seg->arena_name_ = this->arena_name_;
   __seg->id_         = __tmp;
   __seg->size_       = nbytes;
@@ -28,7 +28,7 @@ instant_bin::malloc(const size_t nbytes) noexcept
 }
 
 int
-instant_bin::free(std::shared_ptr<inst_segment> segment) noexcept
+instant_bin::free(std::shared_ptr<instant_segment> segment) noexcept
 {
   if (segment->arena_name_ != this->arena_name_) {
     spdlog::error("segment's arena name does not match current bin's");

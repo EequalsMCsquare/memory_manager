@@ -122,7 +122,7 @@ TEST_CASE("ilegal range segment free error", "[free]")
 {
   libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
-  auto __seg = std::make_shared<libmem::stat_segment>();
+  auto __seg = std::make_shared<libmem::static_segment>();
 
   // ilegal ptr
   __seg->addr_pshift_ = 400;
@@ -158,7 +158,7 @@ TEST_CASE("double free error", "[free]")
   libmem::static_bin bin(0, counter, 32, 10, 0);
   counter++;
 
-  auto __seg = std::make_shared<libmem::stat_segment>();
+  auto __seg = std::make_shared<libmem::static_segment>();
   // double free
   __seg->addr_pshift_ = 0;
   __seg->size_        = 128;

@@ -164,7 +164,7 @@ batch::init_shm(const size_t& buffsz)
   spdlog::info("initializing shm_handle complete.");
 }
 
-std::shared_ptr<stat_segment>
+std::shared_ptr<static_segment>
 batch::allocate(const size_t nbytes)
 {
   spdlog::info("allocate {} bytes of segment", nbytes);
@@ -177,7 +177,7 @@ batch::allocate(const size_t nbytes)
     throw std::runtime_error(
       "required bytes too large! consider using instant bin instead.");
   }
-  std::shared_ptr<stat_segment> __segment;
+  std::shared_ptr<static_segment> __segment;
 
   std::vector<size_t> __rem;
   __rem.reserve(static_bins_.size());
@@ -224,7 +224,7 @@ batch::allocate(const size_t nbytes)
 }
 
 int
-batch::deallocate(std::shared_ptr<stat_segment> segment) noexcept
+batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 {
   if (segment->bin_id_ < this->static_bins_.size()) {
     for (const auto& bin : this->static_bins_) {
