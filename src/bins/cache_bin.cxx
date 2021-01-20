@@ -25,8 +25,8 @@ cache_bin::cache_bin(std::atomic_size_t& segment_counter,
 
   : segment_counter_ref_(segment_counter)
   , max_segsz_(max_segsz)
-  , arena_name_(arena_name)
   , free_area_count_(BUFF_AREA_COUNT)
+  , arena_name_(arena_name)
 {
   spdlog::info("initializing cache bin");
   // create shm_handler
@@ -62,6 +62,7 @@ cache_bin::async_malloc(
   const size_t                                  nbytes,
   std::promise<std::shared_ptr<cache_segment>>& segment) noexcept
 {
+
   // 思路:
   //    1. client 发送 < 1_KB的 allocate 请求
   //    2. 找到一片空闲shared buffering area
@@ -75,7 +76,12 @@ cache_bin::async_malloc(
   //    8. done!
 
   // check which area is free.
-  return std::async(std::launch::async, [&]() -> int {
+  return std::async(std::launch::async, [&segment, nbytes, this]() -> int {
+    // check if required size is <= max_segsz_
+    if (nbytes > this->max_segsz_) {
+      spdlog::error("required size must <= {}byte", this->max_segsz_);
+      return -1;
+    }
     uint32_t i;
     while (1) {
       for (i = 0; i < this->area_buff_.size(); i++) {
@@ -91,7 +97,9 @@ cache_bin::async_malloc(
           __seg->condv_pshift_ = condv_pshift(i);
           __seg->id_           = __tmp;
           // set promise
+          spdlog::info("before set promise");
           segment.set_value(__seg);
+          spdlog::info("after set promise");
           // allocate heap
           void* __heap_buffer = this->pmr_pool_.allocate(nbytes);
           if (__heap_buffer == nullptr) {
@@ -103,7 +111,9 @@ cache_bin::async_malloc(
           }
           // wait for data to be copied to shared memory
           std::unique_lock<std::mutex> __ulock(__tmp_mtx);
+          spdlog::info("before wait");
           this->area_condvs_[i]->wait(__ulock);
+          spdlog::info("after wait.");
           // copy shared meory buffer to local heap
           std::memcpy(__heap_buffer, this->area_buff_[i], nbytes);
           this->area_mtx_[i].unlock();
@@ -111,8 +121,9 @@ cache_bin::async_malloc(
 
           // track ptr;
           this->mtx_.lock();
-          this->data_map_[__tmp] = __heap_buffer;
+          this->data_map_[__tmp] = { __heap_buffer, nbytes };
           this->mtx_.unlock();
+          spdlog::info("before return");
           return 0;
         }
       }
@@ -123,43 +134,35 @@ cache_bin::async_malloc(
 
 std::future<int>
 cache_bin::async_retrieve(
-  std::shared_ptr<cache_segment>                segment,
+  const size_t                                  segment_id,
   std::promise<std::shared_ptr<cache_segment>>& result) noexcept
 {
-  if (segment->size_ == 0) {
-    spdlog::error("invalid segmen size!");
-    return std::async(std::launch::async, []() { return -1; });
-  }
-  // found
   return std::async(std::launch::async, [&]() -> int {
+    // try to find segment
+    auto __iter = this->data_map_.find(segment_id);
+    if (__iter == this->data_map_.end()) {
+      spdlog::error("unable to locate the segment by given id, id: {}.",
+                    segment_id);
+      return -1;
+    }
+    auto     __pair = __iter->second;
     uint32_t i;
     while (1) {
       for (i = 0; i < this->area_buff_.size(); i++) {
         if (this->area_mtx_[i].try_lock()) {
           this->free_area_count_--;
-          // try to locate
-          auto __iter = this->data_map_.find(segment->id_);
-          // no record
-          if (__iter == this->data_map_.end()) {
-            spdlog::error("unable to locate the segment by id. id: {}",
-                          segment->id_);
-            this->area_mtx_[i].unlock();
-            this->free_area_count_++;
-            result.set_exception(std::current_exception());
-            return -1;
-          }
           // when the area is free
           auto       __result_seg = std::make_shared<cache_segment>();
           std::mutex __tmp_mtx;
           std::unique_lock<std::mutex> __ulock(__tmp_mtx);
           // init result segment
           __result_seg->arena_name_   = this->arena_name_;
-          __result_seg->size_         = segment->size_;
+          __result_seg->size_         = __pair.second;
           __result_seg->addr_pshift_  = buffarea_pshift(i);
           __result_seg->condv_pshift_ = condv_pshift(i);
-          __result_seg->id_           = __iter->first;
+          __result_seg->id_           = segment_id;
           // copy data to buff area from heap
-          std::memcpy(this->area_buff_[i], __iter->second, segment->size_);
+          std::memcpy(this->area_buff_[i], __pair.first, __pair.second);
           // fulfill promise
           result.set_value(__result_seg);
           // wait for client to retrieve data and notify
@@ -176,18 +179,17 @@ cache_bin::async_retrieve(
 }
 
 int
-cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
+cache_bin::free(const size_t segment_id) noexcept
 {
   // find ptr by segment->id_
-  auto __iter = this->data_map_.find(segment->id_);
+  auto __iter = this->data_map_.find(segment_id);
   if (__iter == this->data_map_.end()) {
-    spdlog::error("unable to locate the segment by id. id: {}", segment->id_);
+    spdlog::error("unable to locate the segment by id. id: {}", segment_id);
     return -1;
   }
-  // retrieve ptr
-  void* __ptr = __iter->second;
+  auto __pair = __iter->second;
   // deallocate heap buffer
-  this->pmr_pool_.deallocate(__ptr, segment->size_);
+  this->pmr_pool_.deallocate(__pair.first, __pair.second);
   // erase
   this->data_map_.erase(__iter);
   return 0;
@@ -200,30 +202,30 @@ cache_bin::clear() noexcept
   this->pmr_pool_.release();
 }
 
-const size_t
+size_t
 cache_bin::buffarea_pshift(const uint32_t idx) const noexcept
 {
   return BUFF_AREA_COUNT * sizeof(std::condition_variable) +
          this->max_segsz_ * idx;
 }
 
-const size_t
+size_t
 cache_bin::condv_pshift(const uint32_t idx) const noexcept
 {
   return idx * sizeof(std::condition_variable);
 }
 
-const size_t
+size_t
 cache_bin::total_areas() const noexcept
 {
   return this->area_buff_.size();
 }
-const size_t
+size_t
 cache_bin::free_areas() const noexcept
 {
   return this->free_area_count_;
 }
-const size_t
+size_t
 cache_bin::area_size() const noexcept
 {
   return this->max_segsz_;
@@ -232,5 +234,17 @@ std::shared_ptr<shared_memory::shm_handle>
 cache_bin::get_shmhdl() const noexcept
 {
   return this->handle_;
+}
+
+size_t
+cache_bin::max_segsz() const noexcept
+{
+  return this->max_segsz_;
+}
+
+size_t
+cache_bin::segment_count() const noexcept
+{
+  return this->data_map_.size();
 }
 }

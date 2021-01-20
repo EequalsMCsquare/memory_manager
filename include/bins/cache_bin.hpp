@@ -4,12 +4,14 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
 #include <deque>
 #include <future>
 #include <map>
 #include <memory>
 #include <memory_resource>
 #include <mutex>
+#include <utility>
 
 #include "segment.hpp"
 
@@ -28,6 +30,9 @@ constexpr uint32_t BUFF_AREA_COUNT = 8;
 class cache_bin
 {
 
+  using alloc_seg =
+    std::pair<void* /* segment ptr */, size_t /* segment size */>;
+
 protected:
   std::atomic_size_t&                                   segment_counter_ref_;
   std::mutex                                            mtx_;
@@ -39,9 +44,9 @@ protected:
   std::array<std::condition_variable*, BUFF_AREA_COUNT> area_condvs_;
   std::array<void*, BUFF_AREA_COUNT>                    area_buff_;
   std::array<std::mutex, BUFF_AREA_COUNT>               area_mtx_;
-  std::map<size_t, void*>                               data_map_;
-  const size_t buffarea_pshift(const uint32_t idx) const noexcept;
-  const size_t condv_pshift(const uint32_t idx) const noexcept;
+  std::map<size_t, alloc_seg>                           data_map_;
+  size_t buffarea_pshift(const uint32_t idx) const noexcept;
+  size_t condv_pshift(const uint32_t idx) const noexcept;
 
 public:
   explicit cache_bin(std::atomic_size_t& segment_counter,
@@ -53,18 +58,22 @@ public:
     std::promise<std::shared_ptr<cache_segment>>& segment) noexcept;
 
   std::future<int> async_retrieve(
-    std::shared_ptr<cache_segment>                segment,
+    const size_t                                  segment_id,
     std::promise<std::shared_ptr<cache_segment>>& result) noexcept;
 
-  int free(std::shared_ptr<cache_segment> segment) noexcept;
+  int free(const size_t segment_id) noexcept;
 
   void clear() noexcept;
 
-  const size_t total_areas() const noexcept;
+  size_t total_areas() const noexcept;
 
-  const size_t free_areas() const noexcept;
+  size_t free_areas() const noexcept;
 
-  const size_t area_size() const noexcept;
+  size_t area_size() const noexcept;
+
+  size_t max_segsz() const noexcept;
+
+  size_t segment_count() const noexcept;
 
   std::shared_ptr<shared_memory::shm_handle> get_shmhdl() const noexcept;
 };
