@@ -30,9 +30,8 @@ struct base_segment
 struct cache_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
-  size_t                 condv_pshift_;
-  size_t                 addr_pshift_;
-  segmentdesc            to_segmentdesc() const noexcept override;
+
+  segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct instant_segment : base_segment
@@ -54,15 +53,16 @@ struct static_segment : base_segment
 
 struct segmentdesc
 {
-  char     arena_name[256];
+  char     arena_name[128];
   SEG_TYPE seg_type_;
   size_t   segment_id;
   size_t   segment_size;
   size_t   addr_pshift;
   union
   {
-    size_t batch_id;
-    size_t condv_pshift;
+    size_t    batch_id;
+    size_t    condv_pshift;
+    std::byte __XXXX_RESERVE__[sizeof(size_t)];
   };
   union
   {

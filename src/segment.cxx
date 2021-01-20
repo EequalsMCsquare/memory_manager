@@ -14,7 +14,7 @@ segmentdesc::segmentdesc(const static_segment& seg)
   , batch_id(seg.batch_id_)
   , bin_id(seg.bin_id_)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
+  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
 }
 
 segmentdesc::segmentdesc(const instant_segment& seg)
@@ -23,28 +23,26 @@ segmentdesc::segmentdesc(const instant_segment& seg)
   , segment_size(seg.size_)
   , addr_pshift(0)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
+  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
 }
 
 segmentdesc::segmentdesc(const cache_segment& seg)
   : seg_type_(seg.type)
   , segment_id(seg.id_)
   , segment_size(seg.size_)
-  , addr_pshift(seg.addr_pshift_)
-  , condv_pshift(seg.condv_pshift_)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 256);
+  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
 }
 
 std::string
 segmentdesc::shmhdl_name() noexcept
 {
   if (this->seg_type_ == SEG_TYPE::cachbin_segment) {
-    return std::move(fmt::format("{}#cachbin", arena_name));
+    return fmt::format("{}#cachbin", arena_name);
   } else if (this->seg_type_ == SEG_TYPE::instbin_segment) {
-    return std::move(fmt::format("{}#instbin#seg{}", arena_name, segment_id));
+    return fmt::format("{}#instbin#seg{}", arena_name, segment_id);
   } else if (this->seg_type_ == SEG_TYPE::statbin_segment) {
-    return std::move(fmt::format("{}#batch{}#statbin", arena_name, batch_id));
+    return fmt::format("{}#batch{}#statbin", arena_name, batch_id);
   }
 
   return {};
@@ -53,19 +51,19 @@ segmentdesc::shmhdl_name() noexcept
 segmentdesc
 cache_segment::to_segmentdesc() const noexcept
 {
-  return std::move(segmentdesc(*this));
+  return segmentdesc(*this);
 }
 
 segmentdesc
 instant_segment::to_segmentdesc() const noexcept
 {
-  return std::move(segmentdesc(*this));
+  return segmentdesc(*this);
 }
 
 segmentdesc
 static_segment::to_segmentdesc() const noexcept
 {
-  return std::move(segmentdesc(*this));
+  return segmentdesc(*this);
 }
 }
 
