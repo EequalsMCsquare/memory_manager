@@ -38,7 +38,7 @@ std::string
 segmentdesc::shmhdl_name() noexcept
 {
   if (this->seg_type_ == SEG_TYPE::cachbin_segment) {
-    return fmt::format("{}#cachbin", arena_name);
+    return "";
   } else if (this->seg_type_ == SEG_TYPE::instbin_segment) {
     return fmt::format("{}#instbin#seg{}", arena_name, segment_id);
   } else if (this->seg_type_ == SEG_TYPE::statbin_segment) {

@@ -57,11 +57,11 @@ struct segmentdesc
   SEG_TYPE seg_type_;
   size_t   segment_id;
   size_t   segment_size;
-  size_t   addr_pshift;
+
+  size_t addr_pshift;
   union
   {
     size_t    batch_id;
-    size_t    condv_pshift;
     std::byte __XXXX_RESERVE__[sizeof(size_t)];
   };
   union
@@ -70,11 +70,13 @@ struct segmentdesc
     std::byte __XXXXX_RESERVE__[sizeof(size_t)];
   };
 
-  explicit segmentdesc(const cache_segment& seg);
+  segmentdesc() = default;
 
-  explicit segmentdesc(const static_segment& seg);
+  segmentdesc(const cache_segment& seg);
 
-  explicit segmentdesc(const instant_segment& seg);
+  segmentdesc(const static_segment& seg);
+
+  segmentdesc(const instant_segment& seg);
 
   std::string shmhdl_name() noexcept;
 };
