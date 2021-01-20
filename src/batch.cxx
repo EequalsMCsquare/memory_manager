@@ -226,6 +226,13 @@ batch::allocate(const size_t nbytes)
 int
 batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 {
+  if (segment->batch_id_ != this->id()) {
+    spdlog::error(
+      "segment->batch_id doesn't match batch's. expect {}, but received {}",
+      this->id(),
+      segment->batch_id_);
+    return -1;
+  }
   if (segment->bin_id_ < this->static_bins_.size()) {
     for (const auto& bin : this->static_bins_) {
       if (bin->id() == segment->bin_id_) {
@@ -233,10 +240,10 @@ batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
       }
     }
     spdlog::error("unalbe to find the allocate bin.");
-    return -2;
+    return -1;
   } else {
     spdlog::error("unalbe to find the allocate bin.");
-    return -2;
+    return -1;
   }
 }
 
@@ -268,4 +275,5 @@ batch::total_bytes() noexcept
 {
   return this->total_bytes_;
 }
+
 }
