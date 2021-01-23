@@ -8,6 +8,7 @@
 #include <exception>
 #include <fmt/format.h>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <shm_kernel/shared_memory.hpp>
 #include <spdlog/spdlog.h>
@@ -19,63 +20,60 @@ namespace shm_kernel::memory_manager {
 
 using namespace std::chrono_literals;
 
-cache_bin::cache_bin(std::atomic_size_t& segment_counter,
-                     std::string_view    arena_name,
-                     const size_t&       max_segsz)
-
+cache_bin::cache_bin(std::atomic_size_t&             segment_counter,
+                     std::string_view                memmgr_name,
+                     std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
-  , max_segsz_(max_segsz)
-  , arena_name_(arena_name)
+  , memmgr_name_(memmgr_name)
+  , logger(logger)
 {
-  spdlog::info("initializing cache bin");
+  logger->trace("正在初始化Cache bin...");
 
-  spdlog::info("cache bin initialized!");
+  logger->trace("Cache bin 初始化完毕!");
 }
 
-long
+void
+cache_bin::set_logger(std::shared_ptr<spdlog::logger> logger)
+{
+  this->logger = logger;
+}
+
+std::shared_ptr<cache_segment>
 cache_bin::store(void* buffer, const size_t size) noexcept
 {
   // check buffer
   if (buffer == nullptr) {
-    spdlog::error("buffer ptr is nullptr!");
-    return -1;
+    logger->error("Buffer的指针不能为空指针!");
+    return nullptr;
   }
-  // check size
-  if (this->max_segsz_ != 0) {
-    if (size > this->max_segsz_) {
-      spdlog::error("buffer size should <= {}.", this->max_segsz_);
-      return -1;
-    }
-  }
-  auto  __segment_id = this->segment_counter_ref_++;
+  auto __seg         = std::make_shared<cache_segment>();
+  __seg->id_         = this->segment_counter_ref_++;
+  __seg->size_       = size;
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
   if (__alloc_buff == nullptr) {
-    spdlog::error("fail to allocate {} bytes", size);
-    return -1;
+    logger->error("分配{} bytes时失败!可能是内存不足", size);
+    return nullptr;
   }
   // copy data to pool
   std::memcpy(__alloc_buff, buffer, size);
   // store it in data_map
   this->mtx_.lock();
-  this->data_map_[__segment_id] = { __alloc_buff, size };
+  this->data_map_[__seg->id_] = __alloc_buff;
   this->mtx_.unlock();
-  // return segment id
-  return __segment_id;
+  // return segment
+  return __seg;
 }
 
 void*
-cache_bin::retrieve(const size_t segment_id, size_t& segment_size) noexcept
+cache_bin::retrieve(const size_t segment_id) noexcept
 {
   // try to find the segment
   std::lock_guard __G(this->mtx_);
   if (auto __iter = this->data_map_.find(segment_id);
       __iter != this->data_map_.end()) {
-    auto __pair  = __iter->second;
-    segment_size = __pair.second;
-    return __pair.first;
+    return __iter->second;
   }
-  segment_size = 0;
   return nullptr;
 }
 
@@ -86,15 +84,8 @@ cache_bin::set(const size_t segment_id,
 {
   // check buffer
   if (buffer == nullptr) {
-    spdlog::error("buffer ptr is nullptr!");
+    logger->error("Buffer的指针不能为空指针!");
     return -1;
-  }
-  // check size
-  if (this->max_segsz_ != 0) {
-    if (size > this->max_segsz_) {
-      spdlog::error("buffer size should <= {}.", this->max_segsz_);
-      return -1;
-    }
   }
   // check if segment_id exist
   if (auto __iter = this->data_map_.find(segment_id);
@@ -109,17 +100,18 @@ cache_bin::set(const size_t segment_id,
 }
 
 int
-cache_bin::free(const size_t segment_id) noexcept
+cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
 {
   // find ptr by segment->id_
-  auto __iter = this->data_map_.find(segment_id);
+  auto __iter = this->data_map_.find(segment->id_);
   if (__iter == this->data_map_.end()) {
-    spdlog::error("unable to locate the segment by id. id: {}", segment_id);
+    logger->error("没有在当前Cache bin中找到这个segment! segment id: {}",
+                  segment->id_);
     return -1;
   }
   auto __pair = __iter->second;
   // deallocate heap buffer
-  this->pmr_pool_.deallocate(__pair.first, __pair.second);
+  this->pmr_pool_.deallocate(__iter->second, segment->size_);
   // erase
   this->data_map_.erase(__iter);
   return 0;
@@ -130,18 +122,6 @@ cache_bin::clear() noexcept
 {
   this->data_map_.clear();
   this->pmr_pool_.release();
-}
-
-size_t
-cache_bin::area_size() const noexcept
-{
-  return this->max_segsz_;
-}
-
-size_t
-cache_bin::max_segsz() const noexcept
-{
-  return this->max_segsz_;
 }
 
 size_t

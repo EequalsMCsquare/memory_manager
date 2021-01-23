@@ -1,5 +1,4 @@
 #pragma once
-#include "shm_kernel/shared_memory.hpp"
 
 #include <array>
 #include <atomic>
@@ -11,6 +10,8 @@
 #include <memory>
 #include <memory_resource>
 #include <mutex>
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 #include "segment.hpp"
@@ -22,33 +23,32 @@ constexpr uint32_t BUFF_AREA_COUNT = 8;
 class cache_bin
 {
 
-  using alloc_seg =
-    std::pair<void* /* segment ptr */, size_t /* segment size */>;
-
 protected:
   std::atomic_size_t&                    segment_counter_ref_;
   std::mutex                             mtx_;
   std::pmr::unsynchronized_pool_resource pmr_pool_;
-  const size_t                           max_segsz_;
-  std::map<size_t, alloc_seg>            data_map_;
-  std::string_view                       arena_name_;
+  std::map<size_t /* segment id */, void* /* segment buffer */> data_map_;
+  std::string_view                                              memmgr_name_;
+  std::shared_ptr<spdlog::logger>                               logger;
 
 public:
-  explicit cache_bin(std::atomic_size_t& segment_counter,
-                     std::string_view    arena_name,
-                     const size_t&       max_segsz);
+  explicit cache_bin(
+    std::atomic_size_t&             segment_counter,
+    std::string_view                memmgr_name,
+    std::shared_ptr<spdlog::logger> logger = spdlog::default_logger());
 
-  long  store(void* buffer, const size_t size) noexcept;
-  void* retrieve(const size_t segment_id, size_t& segment_size) noexcept;
-  int   set(const size_t segment_id, void* buffer, const size_t size) noexcept;
+  void set_logger(std::shared_ptr<spdlog::logger>);
 
-  int free(const size_t segment_id) noexcept;
+  std::shared_ptr<cache_segment> store(void*        buffer,
+                                       const size_t size) noexcept;
+
+  void* retrieve(const size_t segment_id) noexcept;
+
+  int set(const size_t segment_id, void* buffer, const size_t size) noexcept;
+
+  int free(std::shared_ptr<cache_segment> segment) noexcept;
 
   void clear() noexcept;
-
-  size_t area_size() const noexcept;
-
-  size_t max_segsz() const noexcept;
 
   size_t segment_count() const noexcept;
 };
