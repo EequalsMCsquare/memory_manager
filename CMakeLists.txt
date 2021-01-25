@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(memory_manager
-  VERSION 0.3.0
+  VERSION 0.4.0
   DESCRIPTION "shm_kernel's memory handler component")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -72,7 +72,8 @@ install(FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/include/batch.hpp
 			${CMAKE_CURRENT_SOURCE_DIR}/include/config.hpp
 			${CMAKE_CURRENT_SOURCE_DIR}/include/mem_literals.hpp
-			${CMAKE_CURRENT_SOURCE_DIR}/include/segment.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/segment.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/memmgr.hpp
 		DESTINATION 
 			include/shm_kernel)
 

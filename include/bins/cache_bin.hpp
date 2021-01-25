@@ -39,7 +39,7 @@ public:
 
   void set_logger(std::shared_ptr<spdlog::logger>);
 
-  std::shared_ptr<cache_segment> store(void*        buffer,
+  std::shared_ptr<cache_segment> store(const void*  buffer,
                                        const size_t size) noexcept;
 
   void* retrieve(const size_t segment_id) noexcept;

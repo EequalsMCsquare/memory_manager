@@ -20,14 +20,15 @@ class batch
 {
   friend class fmt::formatter<batch>;
 
-private:
-  std::string_view    arena_name_;
+protected:
+  std::string_view    memmgr_name_;
   const size_t        id_;
   size_t              total_bytes_;
   std::atomic_size_t& segment_counter_ref_;
 
   std::unique_ptr<shared_memory::shm_handle> handle_;
   std::vector<std::unique_ptr<static_bin>>   static_bins_;
+  std::shared_ptr<spdlog::logger>            logger;
 
   /**
    * @brief initialize shared memory handle for this batch
@@ -38,7 +39,8 @@ private:
 
   explicit batch(std::string_view    arena_name,
                  const size_t&       id,
-                 std::atomic_size_t& segment_counter);
+                 std::atomic_size_t& segment_counter,
+                 std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   /**
    * @brief
    *
@@ -54,7 +56,8 @@ public:
                  const size_t&              id,
                  std::atomic_size_t&        segment_counter,
                  const std::vector<size_t>& statbin_chunksz,
-                 const std::vector<size_t>& statbin_chunkcnt);
+                 const std::vector<size_t>& statbin_chunkcnt,
+                 std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
   explicit batch(std::string_view    arena_name,
                  const size_t&       id,
@@ -62,13 +65,15 @@ public:
                  const size_t&       statbin_minchunksz,
                  const size_t&       statbin_maxchunksz,
                  const size_t&       step,
-                 const size_t&       statbin_size);
+                 const size_t&       statbin_size,
+                 std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
   explicit batch(std::string_view           arena_name,
                  const size_t&              id,
                  std::atomic_size_t&        segment_counter,
                  const std::vector<size_t>& statbin_chunksz,
-                 const size_t&              statbin_chunkcnt);
+                 const size_t&              statbin_chunkcnt,
+                 std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
   ~batch();
 

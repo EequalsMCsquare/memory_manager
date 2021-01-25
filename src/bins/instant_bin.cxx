@@ -3,10 +3,12 @@
 #include <spdlog/spdlog.h>
 
 namespace shm_kernel::memory_manager {
-instant_bin::instant_bin(std::atomic_size_t& segment_counter,
-                         std::string_view    arena_name)
+instant_bin::instant_bin(std::atomic_size_t&             segment_counter,
+                         std::string_view                memmgr_name,
+                         std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
-  , arena_name_(arena_name)
+  , memmgr_name_(memmgr_name)
+  , logger(logger)
 {}
 
 std::shared_ptr<instant_segment>
@@ -18,11 +20,11 @@ instant_bin::malloc(const size_t nbytes) noexcept
   this->segments_.insert(std::make_pair(
     __tmp,
     std::make_shared<shared_memory::shm_handle>(
-      fmt::format("{}#instbin#seg{}", arena_name_, __tmp), nbytes)));
-  auto __seg         = std::make_shared<instant_segment>();
-  __seg->arena_name_ = this->arena_name_;
-  __seg->id_         = __tmp;
-  __seg->size_       = nbytes;
+      fmt::format("{}#instbin#seg{}", memmgr_name_, __tmp), nbytes)));
+  auto __seg          = std::make_shared<instant_segment>();
+  __seg->memmgr_name_ = this->memmgr_name_;
+  __seg->id_          = __tmp;
+  __seg->size_        = nbytes;
 
   return std::move(__seg);
 }
@@ -30,12 +32,15 @@ instant_bin::malloc(const size_t nbytes) noexcept
 int
 instant_bin::free(std::shared_ptr<instant_segment> segment) noexcept
 {
-  if (segment->arena_name_ != this->arena_name_) {
-    spdlog::error("segment's arena name does not match current bin's");
+  // TODO:
+  // !这里有点问题, 应该先判断Segment的ref_count！
+  if (segment->memmgr_name_ != this->memmgr_name_) {
+    logger->error("Segment 的memmgr名字与当前Instant Bin的不一致!");
     return -1;
   }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
 
+  // search for segment's shm_handler
   auto __pair = this->segments_.find(segment->id_);
   if (__pair == this->segments_.end()) {
     return -1;

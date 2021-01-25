@@ -4,7 +4,10 @@
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <spdlog/spdlog.h>
 #include <vector>
+
+#include <spdlog/logger.h>
 
 #include "segment.hpp"
 
@@ -12,14 +15,15 @@ namespace shm_kernel::memory_manager {
 class static_bin
 {
 protected:
-  const size_t        id_;
-  std::atomic_size_t& segment_counter_ref_;
-  std::mutex          mtx_;
-  const size_t        base_pshift_;
-  const size_t        chunk_size_;
-  const size_t        chunk_count_;
-  size_t              chunk_left_;
-  std::vector<bool>   chunks_;
+  const size_t                    id_;
+  std::atomic_size_t&             segment_counter_ref_;
+  std::mutex                      mtx_;
+  const size_t                    base_pshift_;
+  const size_t                    chunk_size_;
+  const size_t                    chunk_count_;
+  size_t                          chunk_left_;
+  std::vector<bool>               chunks_;
+  std::shared_ptr<spdlog::logger> logger;
 
   /**
    * @brief Convert nbytes to how many chunks needed to allocate
@@ -32,11 +36,13 @@ protected:
   std::vector<bool>::iterator first_fit(const size_t& nbytes) noexcept;
 
 public:
-  explicit static_bin(const size_t        id,
-                      std::atomic_size_t& segment_counter,
-                      const size_t&       chunk_size,
-                      const size_t&       chunk_count,
-                      const size_t&       base_pshift);
+  explicit static_bin(
+    const size_t        id,
+    std::atomic_size_t& segment_counter,
+    const size_t&       chunk_size,
+    const size_t&       chunk_count,
+    const size_t&       base_pshift,
+    std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
   std::shared_ptr<static_segment> malloc(const size_t nbytes) noexcept;
 

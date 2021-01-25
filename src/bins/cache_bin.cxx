@@ -39,7 +39,7 @@ cache_bin::set_logger(std::shared_ptr<spdlog::logger> logger)
 }
 
 std::shared_ptr<cache_segment>
-cache_bin::store(void* buffer, const size_t size) noexcept
+cache_bin::store(const void* buffer, const size_t size) noexcept
 {
   // check buffer
   if (buffer == nullptr) {

@@ -1,4 +1,5 @@
 #include "batch.hpp"
+#include "config.hpp"
 #include "segment.hpp"
 
 #include <algorithm>
@@ -16,62 +17,70 @@ is_aligned(const size_t& num)
   return num % ALIGNMENT == 0;
 }
 
-batch::batch(std::string_view    arena_name,
-             const size_t&       id,
-             std::atomic_size_t& segment_counter)
-  : arena_name_(arena_name)
+batch::batch(std::string_view                arena_name,
+             const size_t&                   id,
+             std::atomic_size_t&             segment_counter,
+             std::shared_ptr<spdlog::logger> logger)
+  : memmgr_name_(arena_name)
   , id_(id)
   , segment_counter_ref_(segment_counter)
+  , logger(logger)
 {
-  spdlog::info("initializing {}/batch{}", arena_name_, id_);
+  logger->trace("initializing {}/batch{}", memmgr_name_, id_);
 }
 
-batch::batch(std::string_view           arena_name,
-             const size_t&              id,
-             std::atomic_size_t&        segment_counter,
-             const std::vector<size_t>& statbin_chunksz,
-             const std::vector<size_t>& statbin_chunkcnt)
-  : batch(arena_name, id, segment_counter)
+batch::batch(std::string_view                memmgr_name,
+             const size_t&                   id,
+             std::atomic_size_t&             segment_counter,
+             const std::vector<size_t>&      statbin_chunksz,
+             const std::vector<size_t>&      statbin_chunkcnt,
+             std::shared_ptr<spdlog::logger> logger)
+  : batch(memmgr_name, id, segment_counter, logger)
 {
+  logger->trace("正在初始化Batch...");
   if (statbin_chunkcnt.size() == 0) {
-    spdlog::critical("empty static bin chunk count is not allowed!");
+    logger->critical("Chunk Count不允许为空.");
     throw std::invalid_argument(
       "empty static bin chunk count is not acceptable.");
   }
   if (statbin_chunksz.size() == 0) {
-    spdlog::critical("empty static bin chunk size is not allowed!");
+    logger->critical("Chunk Size不允许为空.");
     throw std::invalid_argument(
       "empty static bin chunk size is not acceptable.");
   }
   if (statbin_chunkcnt.size() != statbin_chunksz.size()) {
-    spdlog::critical(
-      "static bin chunk size's length should equal to its chunk count's");
+    logger->critical("数组Chunk Size的长度和Chunk Count不一致!");
     throw std::invalid_argument("static bin chunk size's length should equal "
                                 "to static bin chunk count's.");
   }
 
   this->init_shm(this->init_static_bins(statbin_chunksz, statbin_chunkcnt));
-  spdlog::info("{}/batch{} initializing complete.", arena_name_, id_);
+  logger->trace("{}/batch{} 初始化完毕!", memmgr_name_, id_);
 }
 
-batch::batch(std::string_view    arena_name,
-             const size_t&       id,
-             std::atomic_size_t& segment_counter,
-             const size_t&       statbin_minchunksz,
-             const size_t&       statbin_maxchunksz,
-             const size_t&       step,
-             const size_t&       statbin_size)
-  : batch(arena_name, id, segment_counter)
+batch::batch(std::string_view                arena_name,
+             const size_t&                   id,
+             std::atomic_size_t&             segment_counter,
+             const size_t&                   statbin_minchunksz,
+             const size_t&                   statbin_maxchunksz,
+             const size_t&                   step,
+             const size_t&                   statbin_size,
+             std::shared_ptr<spdlog::logger> logger)
+  : batch(arena_name, id, segment_counter, logger)
 {
+  logger->trace("正在初始化Batch...");
   if (statbin_minchunksz > statbin_maxchunksz) {
+    logger->critical("Min Chunk Size 必须 <= Max Chunk Size");
     throw std::invalid_argument(
       "static bin min chunk must be smaller than max chunk");
   }
   if (!is_aligned(step)) {
+    logger->critical("Step 必须以 {} 对齐!", ALIGNMENT);
     throw std::invalid_argument("step must be aligned to " +
                                 std::to_string(ALIGNMENT));
   }
   if (!is_aligned(statbin_minchunksz) || !is_aligned(statbin_maxchunksz)) {
+    logger->critical("Chunk Size 必须都要对齐 {}", ALIGNMENT);
     throw std::invalid_argument("chunk size must be aligned to " +
                                 std::to_string(ALIGNMENT));
   }
@@ -85,31 +94,33 @@ batch::batch(std::string_view    arena_name,
 
   this->init_shm(this->init_static_bins(
     __chunksz, std::vector<size_t>(__bin_count, statbin_size)));
-  spdlog::info("{}/batch{} initializing complete.", arena_name_, id_);
+  logger->trace("{}/batch{} 初始化完毕!", memmgr_name_, id_);
 }
 
-batch::batch(std::string_view           arena_name,
-             const size_t&              id,
-             std::atomic_size_t&        segment_counter,
-             const std::vector<size_t>& statbin_chunksz,
-             const size_t&              statbin_chunkcnt)
+batch::batch(std::string_view                arena_name,
+             const size_t&                   id,
+             std::atomic_size_t&             segment_counter,
+             const std::vector<size_t>&      statbin_chunksz,
+             const size_t&                   statbin_chunkcnt,
+             std::shared_ptr<spdlog::logger> logger)
   : batch(arena_name,
           id,
           segment_counter,
           statbin_chunksz,
-          std::vector<size_t>(statbin_chunksz.size(), statbin_chunkcnt))
+          std::vector<size_t>(statbin_chunksz.size(), statbin_chunkcnt),
+          logger)
 {}
 
 batch::~batch()
 {
-  spdlog::info("destroying {}/batch{}", arena_name(), id());
+  logger->trace("destroying {}/batch{}", arena_name(), id());
 }
 
 size_t
 batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
                         const std::vector<size_t>& statbin_chunkcnt)
 {
-  spdlog::info("initializing static bins...");
+  logger->trace("正在配置Static Bins...");
   // reserve
   this->static_bins_.reserve(statbin_chunksz.size());
 
@@ -121,6 +132,7 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
   // init this->static_bins_
   for (; __sz_iter != statbin_chunksz.end(); __sz_iter++, __cnt_iter++) {
     if (!is_aligned(*__sz_iter)) {
+      logger->critical("Chunk Size 必须对齐 {} bytes", ALIGNMENT);
       throw std::invalid_argument("static bin chunk size must be aligned to " +
                                   std::to_string(ALIGNMENT));
     }
@@ -141,19 +153,20 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
             });
   this->total_bytes_ = __current_pshift;
 
-  return std::move(__current_pshift);
+  logger->trace("Static Bins 配置完毕!");
+  return __current_pshift;
 }
 
 void
 batch::init_shm(const size_t& buffsz)
 {
-  spdlog::info("initializing shm_handle... size: {}KB", buffsz);
-  auto handle_name = fmt::format("{}#batch{}#statbin", arena_name_, id_);
+  logger->trace("正在初始化shm_handle... size: {}KB", buffsz);
+  auto handle_name = fmt::format("{}#batch{}#statbin", memmgr_name_, id_);
   try {
     this->handle_ =
       std::make_unique<shared_memory::shm_handle>(handle_name, buffsz);
   } catch (const std::exception& e) {
-    spdlog::critical("fail to create shm_handle with following args: "
+    logger->critical("无法创建shm_handle with following args: "
                      "{{handle_name: {}, buffer_size: {}}}. error message: {}",
                      handle_name.c_str(),
                      buffsz,
@@ -161,16 +174,16 @@ batch::init_shm(const size_t& buffsz)
     // re-throw
     throw e;
   }
-  spdlog::info("initializing shm_handle complete.");
+  logger->trace("shm_handle 初始化完毕!");
 }
 
 std::shared_ptr<static_segment>
 batch::allocate(const size_t nbytes)
 {
-  spdlog::info("allocate {} bytes of segment", nbytes);
+  logger->trace("allocate {} bytes of segment", nbytes);
   // Too large, should've used instant bin
   if (nbytes > this->max_chunksz() * 8) {
-    spdlog::error("allocate size too large for static bin, please consider "
+    logger->error("allocate size too large for static bin, please consider "
                   "using instant bin instead! acceptable size should <= {}",
                   this->max_chunksz() * 8);
     // recoverable
@@ -192,8 +205,8 @@ batch::allocate(const size_t nbytes)
         continue;
       } else {
         // perfect match available
-        __segment->batch_id_   = this->id();
-        __segment->arena_name_ = this->arena_name();
+        __segment->batch_id_    = this->id();
+        __segment->memmgr_name_ = this->arena_name();
         return std::move(__segment);
       }
     }
@@ -212,13 +225,13 @@ batch::allocate(const size_t nbytes)
       // remainder bin.
       continue;
     } else {
-      __segment->batch_id_   = this->id();
-      __segment->arena_name_ = this->arena_name();
+      __segment->batch_id_    = this->id();
+      __segment->memmgr_name_ = this->arena_name();
       return std::move(__segment);
     }
   }
   // 没辙了, arena should push back a batch
-  spdlog::warn(
+  logger->warn(
     "unable to find a satified segment in {}/batch{}", arena_name(), id());
   return nullptr;
 }
@@ -227,7 +240,7 @@ int
 batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 {
   if (segment->batch_id_ != this->id()) {
-    spdlog::error(
+    logger->error(
       "segment->batch_id doesn't match batch's. expect {}, but received {}",
       this->id(),
       segment->batch_id_);
@@ -239,10 +252,10 @@ batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
         return bin->free(segment);
       }
     }
-    spdlog::error("unalbe to find the allocate bin.");
+    logger->error("unalbe to find the allocate bin.");
     return -1;
   } else {
-    spdlog::error("unalbe to find the allocate bin.");
+    logger->error("unalbe to find the allocate bin.");
     return -1;
   }
 }
@@ -261,7 +274,7 @@ batch::min_chunksz() noexcept
 std::string_view
 batch::arena_name() noexcept
 {
-  return this->arena_name_;
+  return this->memmgr_name_;
 }
 
 const size_t

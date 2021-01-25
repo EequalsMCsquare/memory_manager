@@ -5,27 +5,39 @@
 
 namespace shm_kernel::memory_manager {
 
-static_bin::static_bin(const size_t        id,
-                       std::atomic_size_t& segment_counter,
-                       const size_t&       chunk_size,
-                       const size_t&       chunk_count,
-                       const size_t&       base_pshift)
+static_bin::static_bin(const size_t                    id,
+                       std::atomic_size_t&             segment_counter,
+                       const size_t&                   chunk_size,
+                       const size_t&                   chunk_count,
+                       const size_t&                   base_pshift,
+                       std::shared_ptr<spdlog::logger> logger)
   : id_(id)
   , segment_counter_ref_(segment_counter)
   , base_pshift_(base_pshift)
   , chunk_size_(chunk_size)
   , chunk_count_(chunk_count)
   , chunks_(chunk_size_, true)
+  , logger(logger)
 {
+  logger->trace("正在初始化Static Bin...");
+  logger->debug(
+    "<static_bin>{{ID: {}, Chunk Size: {}, Chunk Count: {}, Base Pshift: {}.}}",
+    id,
+    chunk_size,
+    chunk_count,
+    base_pshift);
   if (this->chunk_size_ % ALIGNMENT != 0) {
+    logger->critical("Chunk Size 必须对齐 {} bytes.", ALIGNMENT);
     throw std::runtime_error("chunk size must be aligned as " +
                              std::to_string(ALIGNMENT));
   }
   if (this->base_pshift_ % ALIGNMENT != 0) {
+    logger->critical("Chunk的基础指针偏移必须对齐 {} bytes!", ALIGNMENT);
     throw std::runtime_error("base pshift must be aligned as " +
                              std::to_string(ALIGNMENT));
   }
   this->chunk_left_ = chunk_count;
+  logger->trace("Static Bin 初始化完毕!");
 }
 
 std::vector<bool>::iterator
@@ -60,11 +72,13 @@ static_bin::malloc(const size_t nbytes) noexcept
   auto __chunkreq = this->chunk_req(nbytes);
   // insufficient memory in this bin
   if (__chunkreq > this->chunk_left()) {
+    logger->error("当前Static Bin的内存不足以分配!");
     return nullptr;
   }
 
   auto __iter = this->first_fit(__chunkreq);
   if (__iter == chunks_.end()) {
+    logger->error("当前Static Bin的内存不足以分配!");
     return nullptr;
   }
 
@@ -145,8 +159,8 @@ static_bin::clear() noexcept
 const size_t
 static_bin::chunk_req(const size_t& nbytes) noexcept
 {
-  return std::move(nbytes % chunk_size() == 0 ? nbytes / chunk_size()
-                                              : nbytes / chunk_size() + 1);
+  return nbytes % chunk_size() == 0 ? nbytes / chunk_size()
+                                    : nbytes / chunk_size() + 1;
 }
 
 const size_t

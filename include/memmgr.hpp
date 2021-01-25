@@ -7,36 +7,44 @@
 #include "spdlog/logger.h"
 #include <atomic>
 #include <mutex>
+#include <spdlog/spdlog.h>
 
 namespace shm_kernel::memory_manager {
 
-struct memmgr_config
+/**
+ * @brief Memory Manager Config
+ *
+ */
+struct mmgr_config
 {
+  std::string         name;
   size_t              cache_bin_eps;
   size_t              instant_bin_eps;
   std::vector<size_t> batch_bin_size;
   std::vector<size_t> batch_bin_count;
 };
 
-class memmgr
+class mmgr
 {
 
 private:
   std::shared_ptr<spdlog::logger> logger_;
   std::mutex                      mtx_;
 
+  void check_CONFIG() const;
   void init_INSTANT_BIN();
   void init_CACHE_BIN();
-  void add_BATCH();
+
+  // return new added batch sptr
+  std::shared_ptr<batch> add_BATCH();
 
 protected:
-  bool                                is_initialized_;
-  std::atomic_size_t                  segment_counter_{ 0 };
-  std::shared_ptr<instant_bin>        instant_bin_;
-  std::shared_ptr<cache_bin>          cache_bin_;
-  std::vector<std::shared_ptr<batch>> batches_;
-  memmgr_config                       config_;
-
+  bool                                            is_initialized_;
+  std::atomic_size_t                              segment_counter_{ 0 };
+  std::shared_ptr<instant_bin>                    instant_bin_;
+  std::shared_ptr<cache_bin>                      cache_bin_;
+  std::vector<std::shared_ptr<batch>>             batches_;
+  const mmgr_config                               config_;
   std::map<size_t, std::shared_ptr<base_segment>> allocated_segments_;
 
   std::shared_ptr<cache_segment>   cachbin_STORE(const size_t size,
@@ -46,16 +54,17 @@ protected:
 
   int instbin_DEALLOC(const size_t segment_id) noexcept;
   int statbin_DEALLOC(const size_t segment_id) noexcept;
-  int cachbin_REMOVE(const size_t segment_id) noexcept;
-  int cachbin_RELEASE(const size_t segment_id) noexcept;
+  int cachbin_DEALLOC(const size_t segment_id) noexcept;
 
-  memmgr(const memmgr&) = delete;
-  memmgr(memmgr&&)      = delete;
-  memmgr()              = delete;
-  explicit memmgr(memmgr_config&&);
-  memmgr(memmgr_config&&, std::shared_ptr<spdlog::logger>);
-  void init();
+  mmgr(const mmgr&) = delete;
+  mmgr(mmgr&&)      = delete;
+  mmgr()            = delete;
+  mmgr(mmgr_config&&,
+       std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   void set_logger(std::shared_ptr<spdlog::logger>);
+
+public:
+  std::string_view memmgr_name() const noexcept;
 };
 
 }

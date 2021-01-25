@@ -14,7 +14,7 @@ segmentdesc::segmentdesc(const static_segment& seg)
   , batch_id(seg.batch_id_)
   , bin_id(seg.bin_id_)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
+  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
 }
 
 segmentdesc::segmentdesc(const instant_segment& seg)
@@ -23,7 +23,7 @@ segmentdesc::segmentdesc(const instant_segment& seg)
   , segment_size(seg.size_)
   , addr_pshift(0)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
+  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
 }
 
 segmentdesc::segmentdesc(const cache_segment& seg)
@@ -31,7 +31,7 @@ segmentdesc::segmentdesc(const cache_segment& seg)
   , segment_id(seg.id_)
   , segment_size(seg.size_)
 {
-  std::strncpy(this->arena_name, seg.arena_name_.data(), 128);
+  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
 }
 
 std::string

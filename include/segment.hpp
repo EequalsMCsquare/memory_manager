@@ -16,7 +16,7 @@ enum class SEG_TYPE
 
 struct base_segment
 {
-  std::string_view arena_name_;
+  std::string_view memmgr_name_;
   size_t           id_;
   size_t           size_;
 
@@ -30,8 +30,7 @@ struct base_segment
 struct cache_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
-
-  segmentdesc to_segmentdesc() const noexcept override;
+  segmentdesc            to_segmentdesc() const noexcept override;
 };
 
 struct instant_segment : base_segment
