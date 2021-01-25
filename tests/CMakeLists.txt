@@ -19,7 +19,4 @@ function(ADD_TESTBIN Testcase_name)
 	target_link_libraries(${Testcase_name} PRIVATE memory_manager Catch2::Catch2)
 endfunction()
 
-ADD_TESTBIN(Test_static_bin)
-ADD_TESTBIN(Test_instant_bin)
-ADD_TESTBIN(Test_batch)
-ADD_TESTBIN(Test_cache_bin)
+ADD_TESTBIN(Test_Memory_Manager)
