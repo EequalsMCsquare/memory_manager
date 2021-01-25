@@ -2,9 +2,7 @@
 
 ## Memory Manager
 
-This is a component of shm-kernel, which is used to manage the shared memory object. It is not designed to directly interact with shm obj, instead, manage the memory via proxy. There are two major classes which is close to the user - Arena and Segment.
-
-### Arena
+This is a component of shm-kernel, which is used to manage the shared memory object. It is not designed to directly interact with shm obj, instead, manage the memory via memmory map. There are two major classes which is close to the user - mmgr and Segment.
 
 
 There are 3 types of bins.
@@ -17,6 +15,3 @@ Static bin is used to store medium size data which is larger than 1KB and less t
 
 #### Instant Bin
 Instant bin is used to store huge data which is normally larger than 1MB to **INF**. Each allocate each create a new shared memory object, and once it is finished, it will be destroyed.
-
-#### Cache Bin
-Cache bin is used to store tiny data. each Arena can only have **ONE** Cache Bin. Each Cache bin has **FOUR** buffering areas. Which is used to **TRANSFER** data only. 2 for write and 2 for read.

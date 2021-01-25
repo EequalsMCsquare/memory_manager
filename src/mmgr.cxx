@@ -1,6 +1,6 @@
+#include "mmgr.hpp"
 #include "bins/cache_bin.hpp"
 #include "bins/instant_bin.hpp"
-#include "memmgr.hpp"
 #include "segment.hpp"
 #include <memory>
 #include <mutex>
