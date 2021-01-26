@@ -1,5 +1,5 @@
 #include "bins/cache_bin.hpp"
-#include "memmgr.hpp"
+#include "mmgr.hpp"
 #include <array>
 #define CATCH_CONFIG_MAIN
 #include "batch.hpp"
@@ -21,16 +21,16 @@ SCENARIO("Make use of an existing batch", "[batch]")
     REQUIRE(batch.min_chunksz() == 4_KB);
     REQUIRE(batch.max_chunksz() <= 256_KB);
     REQUIRE(batch.id() == 1);
-    REQUIRE(batch.arena_name().compare("test_arena") == 0);
+    REQUIRE(batch.mmgr_name().compare("test_arena") == 0);
 
     GIVEN("A 16KB segment")
     {
       auto seg = batch.allocate(16_KB);
-      REQUIRE(seg->batch_id_ == 1);
-      REQUIRE(seg->id_ == 0);
-      REQUIRE(batch.arena_name().compare("test_arena") == 0);
-      REQUIRE(seg->size_ == 16_KB);
-      REQUIRE(seg->bin_id_ == 0);
+      REQUIRE(seg->batch_id == 1);
+      REQUIRE(seg->id == 0);
+      REQUIRE(batch.mmgr_name().compare("test_arena") == 0);
+      REQUIRE(seg->size == 16_KB);
+      REQUIRE(seg->bin_id == 0);
 
       THEN("the segment counter should increase")
       {
@@ -45,11 +45,11 @@ SCENARIO("Make use of an existing batch", "[batch]")
       GIVEN("A 20KB segment")
       {
         auto seg = batch.allocate(20_KB);
-        REQUIRE(seg->batch_id_ == 1);
-        REQUIRE(seg->memmgr_name_.compare("test_arena") == 0);
-        REQUIRE(seg->id_ == 1);
-        REQUIRE(seg->size_ == 20_KB);
-        REQUIRE(seg->bin_id_ == 2);
+        REQUIRE(seg->batch_id == 1);
+        REQUIRE(seg->mmgr_name.compare("test_arena") == 0);
+        REQUIRE(seg->id == 1);
+        REQUIRE(seg->size == 20_KB);
+        REQUIRE(seg->bin_id == 2);
 
         THEN("the segment counter should increase")
         {
@@ -64,11 +64,11 @@ SCENARIO("Make use of an existing batch", "[batch]")
         GIVEN("A 28_KB segment")
         {
           auto seg = batch.allocate(28_KB);
-          REQUIRE(seg->batch_id_ == 1);
-          REQUIRE(seg->memmgr_name_.compare("test_arena") == 0);
-          REQUIRE(seg->id_ == 2);
-          REQUIRE(seg->size_ == 28_KB);
-          REQUIRE(seg->bin_id_ == 3);
+          REQUIRE(seg->batch_id == 1);
+          REQUIRE(seg->mmgr_name.compare("test_arena") == 0);
+          REQUIRE(seg->id == 2);
+          REQUIRE(seg->size == 28_KB);
+          REQUIRE(seg->bin_id == 3);
 
           THEN("the segment counter should increase")
           {
@@ -83,11 +83,11 @@ SCENARIO("Make use of an existing batch", "[batch]")
           GIVEN("A 32_KB segment")
           {
             auto seg = batch.allocate(32_KB);
-            REQUIRE(seg->batch_id_ == 1);
-            REQUIRE(seg->memmgr_name_.compare("test_arena") == 0);
-            REQUIRE(seg->id_ == 3);
-            REQUIRE(seg->size_ == 32_KB);
-            REQUIRE(seg->bin_id_ == 0);
+            REQUIRE(seg->batch_id == 1);
+            REQUIRE(seg->mmgr_name.compare("test_arena") == 0);
+            REQUIRE(seg->id == 3);
+            REQUIRE(seg->size == 32_KB);
+            REQUIRE(seg->bin_id == 0);
 
             THEN("the segment counter should increase")
             {
@@ -113,8 +113,8 @@ SCENARIO("Make use of an existing batch", "[batch]")
 
     GIVEN("Give an ivalid batch_id segment")
     {
-      auto seg       = std::make_shared<libmem::static_segment>();
-      seg->batch_id_ = 100;
+      auto seg      = std::make_shared<libmem::static_segment>();
+      seg->batch_id = 100;
       WHEN("deallocate a invalid segment")
       {
         auto rv = batch.deallocate(seg);
@@ -155,11 +155,11 @@ SCENARIO("Store buffer in a cache bin", "[cache_bin]")
             auto seg = bin.store(src_arr.data(), sizeof(src_arr));
             REQUIRE(seg != nullptr);
             REQUIRE(bin.segment_count() == 1);
-            REQUIRE(seg->size_ == sizeof(src_arr));
+            REQUIRE(seg->size == sizeof(src_arr));
 
             AND_WHEN("Retrive the data")
             {
-              double* __local_buffer = (double*)bin.retrieve(seg->id_);
+              double* __local_buffer = (double*)bin.retrieve(seg->id);
               REQUIRE(__local_buffer != nullptr);
               uint32_t i;
               for (i = 0; i < 100; i++) {
@@ -196,7 +196,7 @@ TEST_CASE("instant bin malloc", "[instant_bin]")
   auto seg1 = bin.malloc(4_MB);
   REQUIRE(seg1 != nullptr);
   REQUIRE(bin.shmhdl_count() == 1);
-  auto seg1_shmhdl = bin.get_shmhdl(seg1->id_);
+  auto seg1_shmhdl = bin.get_shmhdl(seg1->id);
   REQUIRE(seg1_shmhdl.use_count() == 2);
   REQUIRE(seg1_shmhdl->ref_count() == 1);
   REQUIRE(seg1_shmhdl->nbytes() >= 4_MB);
@@ -204,7 +204,7 @@ TEST_CASE("instant bin malloc", "[instant_bin]")
   auto seg2 = bin.malloc(16_MB);
   REQUIRE(seg2 != nullptr);
   REQUIRE(bin.shmhdl_count() == 2);
-  auto seg2_shmhdl = bin.get_shmhdl(seg2->id_);
+  auto seg2_shmhdl = bin.get_shmhdl(seg2->id);
   REQUIRE(seg2_shmhdl.use_count() == 2);
   REQUIRE(seg2_shmhdl->ref_count() == 1);
   REQUIRE(seg2_shmhdl->nbytes() >= 16_MB);
@@ -212,7 +212,7 @@ TEST_CASE("instant bin malloc", "[instant_bin]")
   auto seg3 = bin.malloc(128_MB);
   REQUIRE(seg3 != nullptr);
   REQUIRE(bin.shmhdl_count() == 3);
-  auto seg3_shmhdl = bin.get_shmhdl(seg3->id_);
+  auto seg3_shmhdl = bin.get_shmhdl(seg3->id);
   REQUIRE(seg3_shmhdl.use_count() == 2);
   REQUIRE(seg3_shmhdl->ref_count() == 1);
   REQUIRE(seg3_shmhdl->nbytes() >= 128_MB);
@@ -226,7 +226,7 @@ TEST_CASE("instant bin free", "[instant_bin]")
   auto seg1 = bin.malloc(4_MB);
   REQUIRE(seg1 != nullptr);
   {
-    auto seg1_shmhdl = bin.get_shmhdl(seg1->id_);
+    auto seg1_shmhdl = bin.get_shmhdl(seg1->id);
     REQUIRE(seg1_shmhdl->nbytes() >= 4_MB);
     REQUIRE(seg1_shmhdl->ref_count() == 1);
     REQUIRE(bin.size() == 1);
@@ -238,7 +238,7 @@ TEST_CASE("instant bin free", "[instant_bin]")
   auto seg2 = bin.malloc(128_MB);
   REQUIRE(seg2 != nullptr);
   {
-    auto seg2_shmhdl = bin.get_shmhdl(seg2->id_);
+    auto seg2_shmhdl = bin.get_shmhdl(seg2->id);
     REQUIRE(seg2_shmhdl->nbytes() >= 128_MB);
     REQUIRE(seg2_shmhdl->ref_count() == 1);
     REQUIRE(bin.size() == 1);
@@ -277,23 +277,23 @@ TEST_CASE("allocate with successful return", "[static_bin]")
   libmem::static_bin bin(0, counter, 32, 200, 0);
   auto               seg1 = bin.malloc(128);
   REQUIRE(seg1);
-  REQUIRE(seg1->addr_pshift_ == 0);
-  REQUIRE(seg1->size_ == 128);
+  REQUIRE(seg1->addr_pshift == 0);
+  REQUIRE(seg1->size == 128);
 
   auto seg2 = bin.malloc(128);
   REQUIRE(seg2);
-  REQUIRE(seg2->addr_pshift_ == 128);
-  REQUIRE(seg2->size_ == 128);
+  REQUIRE(seg2->addr_pshift == 128);
+  REQUIRE(seg2->size == 128);
 
   auto seg3 = bin.malloc(256);
   REQUIRE(seg3);
-  REQUIRE(seg3->addr_pshift_ == 256);
-  REQUIRE(seg3->size_ == 256);
+  REQUIRE(seg3->addr_pshift == 256);
+  REQUIRE(seg3->size == 256);
 
   auto seg4 = bin.malloc(512);
   REQUIRE(seg4);
-  REQUIRE(seg4->addr_pshift_ == 512);
-  REQUIRE(seg4->size_ == 512);
+  REQUIRE(seg4->addr_pshift == 512);
+  REQUIRE(seg4->size == 512);
 }
 
 TEST_CASE("allocate with error return", "[static_bin]")
@@ -363,30 +363,30 @@ TEST_CASE("ilegal range segment free error", "[static_bin]")
   auto               __seg = std::make_shared<libmem::static_segment>();
 
   // ilegal ptr
-  __seg->addr_pshift_ = 400;
-  __seg->size_        = 0;
-  auto rv1            = bin.free(__seg);
+  __seg->addr_pshift = 400;
+  __seg->size        = 0;
+  auto rv1           = bin.free(__seg);
   REQUIRE(rv1 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal ptr
-  __seg->addr_pshift_ = 800;
-  __seg->size_        = 0;
-  auto rv2            = bin.free(__seg);
+  __seg->addr_pshift = 800;
+  __seg->size        = 0;
+  auto rv2           = bin.free(__seg);
   REQUIRE(rv2 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal segment
-  __seg->addr_pshift_ = 0;
-  __seg->size_        = 800;
-  auto rv3            = bin.free(__seg);
+  __seg->addr_pshift = 0;
+  __seg->size        = 800;
+  auto rv3           = bin.free(__seg);
   REQUIRE(rv3 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   // ilegal segment
-  __seg->addr_pshift_ = 0;
-  __seg->size_        = 400;
-  auto rv4            = bin.free(__seg);
+  __seg->addr_pshift = 0;
+  __seg->size        = 400;
+  auto rv4           = bin.free(__seg);
   REQUIRE(rv4 == -1);
   REQUIRE(bin.chunk_left() == 10);
 }
@@ -398,19 +398,19 @@ TEST_CASE("double free error", "[static_bin]")
 
   auto __seg = std::make_shared<libmem::static_segment>();
   // double free
-  __seg->addr_pshift_ = 0;
-  __seg->size_        = 128;
-  auto rv1            = bin.free(__seg);
+  __seg->addr_pshift = 0;
+  __seg->size        = 128;
+  auto rv1           = bin.free(__seg);
   REQUIRE(rv1 == -2);
   REQUIRE(bin.chunk_left() == 10);
 
   auto seg = bin.malloc(128);
   REQUIRE(seg);
-  REQUIRE(seg->addr_pshift_ == 0);
+  REQUIRE(seg->addr_pshift == 0);
   REQUIRE(bin.chunk_left() == 6);
 
-  seg->size_ = 256;
-  auto rv2   = bin.free(seg);
+  seg->size = 256;
+  auto rv2  = bin.free(seg);
   REQUIRE(rv2 == -2);
   REQUIRE(bin.chunk_left() == 6);
 }

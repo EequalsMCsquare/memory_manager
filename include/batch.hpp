@@ -93,7 +93,7 @@ public:
    */
   int deallocate(std::shared_ptr<static_segment> segment) noexcept;
 
-  std::string_view arena_name() noexcept;
+  std::string_view mmgr_name() noexcept;
   const size_t     id() noexcept;
   const size_t     max_chunksz() noexcept;
   const size_t     min_chunksz() noexcept;

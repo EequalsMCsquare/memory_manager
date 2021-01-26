@@ -113,7 +113,7 @@ batch::batch(std::string_view                arena_name,
 
 batch::~batch()
 {
-  logger->trace("destroying {}/batch{}", arena_name(), id());
+  logger->trace("destroying {}/batch{}", mmgr_name(), id());
 }
 
 size_t
@@ -206,7 +206,7 @@ batch::allocate(const size_t nbytes)
       } else {
         // perfect match available
         __segment->batch_id  = this->id();
-        __segment->mmgr_name = this->arena_name();
+        __segment->mmgr_name = this->mmgr_name();
         return std::move(__segment);
       }
     }
@@ -226,13 +226,13 @@ batch::allocate(const size_t nbytes)
       continue;
     } else {
       __segment->batch_id  = this->id();
-      __segment->mmgr_name = this->arena_name();
+      __segment->mmgr_name = this->mmgr_name();
       return std::move(__segment);
     }
   }
   // 没辙了, arena should push back a batch
   logger->warn(
-    "unable to find a satified segment in {}/batch{}", arena_name(), id());
+    "unable to find a satified segment in {}/batch{}", mmgr_name(), id());
   return nullptr;
 }
 
@@ -272,7 +272,7 @@ batch::min_chunksz() noexcept
 }
 
 std::string_view
-batch::arena_name() noexcept
+batch::mmgr_name() noexcept
 {
   return this->memmgr_name_;
 }
