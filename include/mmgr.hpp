@@ -28,8 +28,11 @@ class mmgr
 {
 
 private:
-  std::shared_ptr<spdlog::logger> logger_;
-  std::mutex                      mtx_;
+  std::shared_ptr<spdlog::logger>     logger_;
+  std::mutex                          mtx_;
+  std::shared_ptr<instant_bin>        instant_bin_;
+  std::shared_ptr<cache_bin>          cache_bin_;
+  std::vector<std::shared_ptr<batch>> batches_;
 
   void check_CONFIG() const;
   void init_INSTANT_BIN();
@@ -41,20 +44,19 @@ private:
 protected:
   bool                                            is_initialized_;
   std::atomic_size_t                              segment_counter_{ 0 };
-  std::shared_ptr<instant_bin>                    instant_bin_;
-  std::shared_ptr<cache_bin>                      cache_bin_;
-  std::vector<std::shared_ptr<batch>>             batches_;
   const mmgr_config                               config_;
-  std::map<size_t, std::shared_ptr<base_segment>> allocated_segments_;
+  std::map<size_t, std::shared_ptr<base_segment>> segment_table_;
 
-  std::shared_ptr<cache_segment>   cachbin_STORE(const size_t size,
-                                                 const void*  buffer) noexcept;
+  std::shared_ptr<cache_segment> cachbin_STORE(const size_t size,
+                                               const void*  buffer) noexcept;
+  int   cachbin_DEALLOC(const size_t segment_id) noexcept;
+  void* cachbin_RETRIEVE(const size_t segment_id) noexcept;
+
   std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size) noexcept;
-  std::shared_ptr<static_segment>  statbin_ALLOC(const size_t size) noexcept;
-
   int instbin_DEALLOC(const size_t segment_id) noexcept;
+
+  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;
   int statbin_DEALLOC(const size_t segment_id) noexcept;
-  int cachbin_DEALLOC(const size_t segment_id) noexcept;
 
   mmgr(const mmgr&) = delete;
   mmgr(mmgr&&)      = delete;

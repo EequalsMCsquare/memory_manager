@@ -66,6 +66,21 @@ mmgr::cachbin_STORE(const size_t size, const void* buffer) noexcept
   }
   return this->cache_bin_->store(buffer, size);
 }
+void*
+mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
+{
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
+    logger_->error("没有找到Segment {}", segment_id);
+    return nullptr;
+  }
+  auto __buff = this->cache_bin_->retrieve(segment_id);
+  if (__buff == nullptr) {
+    logger_->error("segment {} 不是一个Cache Segment!", segment_id);
+    return nullptr;
+  }
+  return __buff;
+}
 
 std::shared_ptr<instant_segment>
 mmgr::instbin_ALLOC(const size_t size) noexcept
@@ -111,8 +126,8 @@ mmgr::statbin_ALLOC(const size_t size) noexcept
 int
 mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
 {
-  auto __iter = this->allocated_segments_.find(segment_id);
-  if (__iter == this->allocated_segments_.end()) {
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
     logger_->error("没有找到Segment");
     return -1;
   }
@@ -132,8 +147,8 @@ mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
 int
 mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
 {
-  auto __iter = this->allocated_segments_.find(segment_id);
-  if (__iter == this->allocated_segments_.end()) {
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
     logger_->error("没有找到Segment");
     return -1;
   }
@@ -153,8 +168,8 @@ mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
 int
 mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
 {
-  auto __iter = this->allocated_segments_.find(segment_id);
-  if (__iter == this->allocated_segments_.end()) {
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
     logger_->error("没有找到Segment");
     return -1;
   }
