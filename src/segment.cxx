@@ -3,46 +3,92 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <pstl/glue_algorithm_defs.h>
+#include <stdexcept>
 
 namespace shm_kernel::memory_manager {
 
-segmentdesc::segmentdesc(const static_segment& seg)
-  : seg_type_(seg.type)
-  , segment_id(seg.id_)
-  , segment_size(seg.size_)
-  , addr_pshift(seg.addr_pshift_)
-  , batch_id(seg.batch_id_)
-  , bin_id(seg.bin_id_)
+void
+segmentdesc::init_with_cache(const cache_segment& seg)
 {
-  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
+  this->segment_id   = seg.id;
+  this->segment_size = seg.size;
+  this->segment_type = SEG_TYPE::cachbin_segment;
+  std::strncpy(this->mmgr_name, seg.mmgr_name.data(), 128);
+}
+void
+segmentdesc::init_with_static(const static_segment& seg)
+{
+  this->segment_id   = seg.id;
+  this->segment_size = seg.size;
+  this->segment_type = SEG_TYPE::statbin_segment;
+  this->addr_pshift  = seg.addr_pshift;
+  this->batch_id     = seg.batch_id;
+  this->bin_id       = seg.bin_id;
+  std::strncpy(this->mmgr_name, seg.mmgr_name.data(), 128);
+}
+void
+segmentdesc::init_with_instant(const instant_segment& seg)
+{
+  this->segment_type = SEG_TYPE::instbin_segment;
+  this->segment_id   = seg.id;
+  this->segment_size = seg.size;
+  this->addr_pshift  = 0;
+  std::strncpy(this->mmgr_name, seg.mmgr_name.data(), 128);
+}
+
+segmentdesc::segmentdesc(base_segment&& seg)
+{
+  if (typeid(seg) == typeid(cache_segment)) {
+    this->init_with_cache(dynamic_cast<cache_segment&>(seg));
+  } else if (typeid(seg) == typeid(instant_segment)) {
+    this->init_with_instant(dynamic_cast<instant_segment&>(seg));
+  } else if (typeid(seg) == typeid(static_segment)) {
+    this->init_with_static(dynamic_cast<static_segment&>(seg));
+  } else {
+    throw std::runtime_error(fmt::format(
+      "无法初始化！因为Segment的 typeid({})不合法", typeid(seg).name()));
+  }
+}
+
+segmentdesc::segmentdesc(const static_segment& seg)
+{
+  this->init_with_static(seg);
+}
+
+segmentdesc::segmentdesc(std::shared_ptr<static_segment> seg)
+{
+  this->init_with_static(*seg.get());
 }
 
 segmentdesc::segmentdesc(const instant_segment& seg)
-  : seg_type_(seg.type)
-  , segment_id(seg.id_)
-  , segment_size(seg.size_)
-  , addr_pshift(0)
 {
-  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
+  this->init_with_instant(seg);
+}
+
+segmentdesc::segmentdesc(std::shared_ptr<instant_segment> seg)
+{
+  this->init_with_instant(*seg.get());
 }
 
 segmentdesc::segmentdesc(const cache_segment& seg)
-  : seg_type_(seg.type)
-  , segment_id(seg.id_)
-  , segment_size(seg.size_)
 {
-  std::strncpy(this->arena_name, seg.memmgr_name_.data(), 128);
+  this->init_with_cache(seg);
+}
+
+segmentdesc::segmentdesc(std::shared_ptr<cache_segment> seg)
+{
+  this->init_with_cache(*seg.get());
 }
 
 std::string
 segmentdesc::shmhdl_name() noexcept
 {
-  if (this->seg_type_ == SEG_TYPE::cachbin_segment) {
+  if (this->segment_type == SEG_TYPE::cachbin_segment) {
     return "";
-  } else if (this->seg_type_ == SEG_TYPE::instbin_segment) {
-    return fmt::format("{}#instbin#seg{}", arena_name, segment_id);
-  } else if (this->seg_type_ == SEG_TYPE::statbin_segment) {
-    return fmt::format("{}#batch{}#statbin", arena_name, batch_id);
+  } else if (this->segment_type == SEG_TYPE::instbin_segment) {
+    return fmt::format("{}#instbin#seg{}", mmgr_name, segment_id);
+  } else if (this->segment_type == SEG_TYPE::statbin_segment) {
+    return fmt::format("{}#batch{}#statbin", mmgr_name, batch_id);
   }
 
   return {};

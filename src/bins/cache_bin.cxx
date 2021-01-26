@@ -47,8 +47,8 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
     return nullptr;
   }
   auto __seg         = std::make_shared<cache_segment>();
-  __seg->id_         = this->segment_counter_ref_++;
-  __seg->size_       = size;
+  __seg->id          = this->segment_counter_ref_++;
+  __seg->size        = size;
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
   if (__alloc_buff == nullptr) {
@@ -59,7 +59,7 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
   std::memcpy(__alloc_buff, buffer, size);
   // store it in data_map
   this->mtx_.lock();
-  this->data_map_[__seg->id_] = __alloc_buff;
+  this->data_map_[__seg->id] = __alloc_buff;
   this->mtx_.unlock();
   // return segment
   return __seg;
@@ -103,15 +103,15 @@ int
 cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
 {
   // find ptr by segment->id_
-  auto __iter = this->data_map_.find(segment->id_);
+  auto __iter = this->data_map_.find(segment->id);
   if (__iter == this->data_map_.end()) {
     logger->error("没有在当前Cache bin中找到这个segment! segment id: {}",
-                  segment->id_);
+                  segment->id);
     return -1;
   }
   auto __pair = __iter->second;
   // deallocate heap buffer
-  this->pmr_pool_.deallocate(__iter->second, segment->size_);
+  this->pmr_pool_.deallocate(__iter->second, segment->size);
   // erase
   this->data_map_.erase(__iter);
   return 0;

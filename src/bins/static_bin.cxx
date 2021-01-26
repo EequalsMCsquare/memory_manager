@@ -93,10 +93,10 @@ static_bin::malloc(const size_t nbytes) noexcept
     std::distance(this->chunks_.begin(), __iter) * this->chunk_size();
 
   // assign to base_segment
-  __seg->addr_pshift_ = __ptr + this->base_pshift();
-  __seg->size_        = nbytes;
-  __seg->bin_id_      = this->id();
-  __seg->id_          = __segment_id;
+  __seg->addr_pshift = __ptr + this->base_pshift();
+  __seg->size        = nbytes;
+  __seg->bin_id      = this->id();
+  __seg->id          = __segment_id;
   return __seg;
 }
 
@@ -107,11 +107,11 @@ static_bin::free(std::shared_ptr<static_segment> segment) noexcept
     return -1;
   }
   // check if the segment is malloc in this bin
-  if (segment->bin_id_ != this->id()) {
+  if (segment->bin_id != this->id()) {
     return -1;
   }
-  auto __ptr  = segment->addr_pshift_ - this->base_pshift();
-  auto __size = segment->size_;
+  auto __ptr  = segment->addr_pshift - this->base_pshift();
+  auto __size = segment->size;
 
   auto __ptr_chunks = this->chunk_req(__ptr);
 

@@ -205,8 +205,8 @@ batch::allocate(const size_t nbytes)
         continue;
       } else {
         // perfect match available
-        __segment->batch_id_    = this->id();
-        __segment->memmgr_name_ = this->arena_name();
+        __segment->batch_id  = this->id();
+        __segment->mmgr_name = this->arena_name();
         return std::move(__segment);
       }
     }
@@ -225,8 +225,8 @@ batch::allocate(const size_t nbytes)
       // remainder bin.
       continue;
     } else {
-      __segment->batch_id_    = this->id();
-      __segment->memmgr_name_ = this->arena_name();
+      __segment->batch_id  = this->id();
+      __segment->mmgr_name = this->arena_name();
       return std::move(__segment);
     }
   }
@@ -239,16 +239,16 @@ batch::allocate(const size_t nbytes)
 int
 batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 {
-  if (segment->batch_id_ != this->id()) {
+  if (segment->batch_id != this->id()) {
     logger->error(
       "segment->batch_id doesn't match batch's. expect {}, but received {}",
       this->id(),
-      segment->batch_id_);
+      segment->batch_id);
     return -1;
   }
-  if (segment->bin_id_ < this->static_bins_.size()) {
+  if (segment->bin_id < this->static_bins_.size()) {
     for (const auto& bin : this->static_bins_) {
-      if (bin->id() == segment->bin_id_) {
+      if (bin->id() == segment->bin_id) {
         return bin->free(segment);
       }
     }

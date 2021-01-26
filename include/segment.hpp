@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string_view>
 
 namespace shm_kernel::memory_manager {
@@ -16,9 +17,9 @@ enum class SEG_TYPE
 
 struct base_segment
 {
-  std::string_view memmgr_name_;
-  size_t           id_;
-  size_t           size_;
+  std::string_view mmgr_name;
+  size_t           id;
+  size_t           size;
 
   virtual segmentdesc to_segmentdesc() const noexcept = 0;
 };
@@ -43,17 +44,17 @@ struct instant_segment : base_segment
 struct static_segment : base_segment
 {
   inline static SEG_TYPE type = SEG_TYPE::statbin_segment;
-  size_t                 batch_id_;
-  size_t                 bin_id_;
-  size_t                 addr_pshift_;
+  size_t                 batch_id;
+  size_t                 bin_id;
+  size_t                 addr_pshift;
 
   segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct segmentdesc
 {
-  char     arena_name[128];
-  SEG_TYPE seg_type_;
+  char     mmgr_name[128];
+  SEG_TYPE segment_type;
   size_t   segment_id;
   size_t   segment_size;
 
@@ -69,13 +70,17 @@ struct segmentdesc
     std::byte __XXXXX_RESERVE__[sizeof(size_t)];
   };
 
+  void init_with_cache(const cache_segment&);
+  void init_with_static(const static_segment&);
+  void init_with_instant(const instant_segment&);
   segmentdesc() = default;
-
-  segmentdesc(const cache_segment& seg);
-
-  segmentdesc(const static_segment& seg);
-
-  segmentdesc(const instant_segment& seg);
+  segmentdesc(base_segment&&);
+  segmentdesc(const cache_segment&);
+  segmentdesc(std::shared_ptr<cache_segment>);
+  segmentdesc(const static_segment&);
+  segmentdesc(std::shared_ptr<static_segment>);
+  segmentdesc(const instant_segment&);
+  segmentdesc(std::shared_ptr<instant_segment>);
 
   std::string shmhdl_name() noexcept;
 };

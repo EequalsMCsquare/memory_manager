@@ -147,7 +147,7 @@ mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
   // cast to static segment
   auto __seg = std::dynamic_pointer_cast<static_segment>(__iter->second);
   // free
-  return this->batches_[__seg->batch_id_]->deallocate(__seg);
+  return this->batches_[__seg->batch_id]->deallocate(__seg);
 }
 
 int

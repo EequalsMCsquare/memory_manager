@@ -21,10 +21,10 @@ instant_bin::malloc(const size_t nbytes) noexcept
     __tmp,
     std::make_shared<shared_memory::shm_handle>(
       fmt::format("{}#instbin#seg{}", memmgr_name_, __tmp), nbytes)));
-  auto __seg          = std::make_shared<instant_segment>();
-  __seg->memmgr_name_ = this->memmgr_name_;
-  __seg->id_          = __tmp;
-  __seg->size_        = nbytes;
+  auto __seg       = std::make_shared<instant_segment>();
+  __seg->mmgr_name = this->memmgr_name_;
+  __seg->id        = __tmp;
+  __seg->size      = nbytes;
 
   return std::move(__seg);
 }
@@ -34,14 +34,14 @@ instant_bin::free(std::shared_ptr<instant_segment> segment) noexcept
 {
   // TODO:
   // !这里有点问题, 应该先判断Segment的ref_count！
-  if (segment->memmgr_name_ != this->memmgr_name_) {
+  if (segment->mmgr_name != this->memmgr_name_) {
     logger->error("Segment 的memmgr名字与当前Instant Bin的不一致!");
     return -1;
   }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
 
   // search for segment's shm_handler
-  auto __pair = this->segments_.find(segment->id_);
+  auto __pair = this->segments_.find(segment->id);
   if (__pair == this->segments_.end()) {
     return -1;
   }
