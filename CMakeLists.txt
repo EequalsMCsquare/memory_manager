@@ -28,7 +28,8 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/bins SRC)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 
 add_library(memory_manager STATIC ${SRC})
-target_link_libraries(memory_manager PUBLIC fmt::fmt spdlog::spdlog shm_kernel::shared_memory)
+target_link_libraries(memory_manager PUBLIC fmt::fmt-header-only spdlog::spdlog_header_only shm_kernel::shared_memory)
+target_compile_options(memory_manager PRIVATE -fPIC)
 target_include_directories(memory_manager PUBLIC 
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
       "$<INSTALL_INTERFACE:include/shm_kernel>")
