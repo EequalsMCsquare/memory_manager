@@ -24,7 +24,7 @@ batch::batch(std::string_view                arena_name,
   : memmgr_name_(arena_name)
   , id_(id)
   , segment_counter_ref_(segment_counter)
-  , logger(logger)
+  , _M_batch_logger(logger)
 {
   logger->trace("initializing {}/batch{}", memmgr_name_, id_);
 }
@@ -113,14 +113,14 @@ batch::batch(std::string_view                arena_name,
 
 batch::~batch()
 {
-  logger->trace("destroying {}/batch{}", mmgr_name(), id());
+  _M_batch_logger->trace("destroying {}/batch{}", mmgr_name(), id());
 }
 
 size_t
 batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
                         const std::vector<size_t>& statbin_chunkcnt)
 {
-  logger->trace("正在配置Static Bins...");
+  _M_batch_logger->trace("正在配置Static Bins...");
   // reserve
   this->static_bins_.reserve(statbin_chunksz.size());
 
@@ -132,7 +132,7 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
   // init this->static_bins_
   for (; __sz_iter != statbin_chunksz.end(); __sz_iter++, __cnt_iter++) {
     if (!is_aligned(*__sz_iter)) {
-      logger->critical("Chunk Size 必须对齐 {} bytes", ALIGNMENT);
+      _M_batch_logger->critical("Chunk Size 必须对齐 {} bytes", ALIGNMENT);
       throw std::invalid_argument("static bin chunk size must be aligned to " +
                                   std::to_string(ALIGNMENT));
     }
@@ -153,39 +153,41 @@ batch::init_static_bins(const std::vector<size_t>& statbin_chunksz,
             });
   this->total_bytes_ = __current_pshift;
 
-  logger->trace("Static Bins 配置完毕!");
+  _M_batch_logger->trace("Static Bins 配置完毕!");
   return __current_pshift;
 }
 
 void
 batch::init_shm(const size_t& buffsz)
 {
-  logger->trace("正在初始化shm_handle... size: {}KB", buffsz);
+  _M_batch_logger->trace("正在初始化shm_handle... size: {}KB", buffsz);
   auto handle_name = fmt::format("{}#batch{}#statbin", memmgr_name_, id_);
   try {
     this->handle_ =
       std::make_unique<shared_memory::shm_handle>(handle_name, buffsz);
   } catch (const std::exception& e) {
-    logger->critical("无法创建shm_handle with following args: "
-                     "{{handle_name: {}, buffer_size: {}}}. error message: {}",
-                     handle_name.c_str(),
-                     buffsz,
-                     e.what());
+    _M_batch_logger->critical(
+      "无法创建shm_handle with following args: "
+      "{{handle_name: {}, buffer_size: {}}}. error message: {}",
+      handle_name.c_str(),
+      buffsz,
+      e.what());
     // re-throw
     throw e;
   }
-  logger->trace("shm_handle 初始化完毕!");
+  _M_batch_logger->trace("shm_handle 初始化完毕!");
 }
 
 std::shared_ptr<static_segment>
 batch::allocate(const size_t nbytes)
 {
-  logger->trace("allocate {} bytes of segment", nbytes);
+  _M_batch_logger->trace("allocate {} bytes of segment", nbytes);
   // Too large, should've used instant bin
   if (nbytes > this->max_chunksz() * 8) {
-    logger->error("allocate size too large for static bin, please consider "
-                  "using instant bin instead! acceptable size should <= {}",
-                  this->max_chunksz() * 8);
+    _M_batch_logger->error(
+      "allocate size too large for static bin, please consider "
+      "using instant bin instead! acceptable size should <= {}",
+      this->max_chunksz() * 8);
     // recoverable
     throw std::runtime_error(
       "required bytes too large! consider using instant bin instead.");
@@ -231,7 +233,7 @@ batch::allocate(const size_t nbytes)
     }
   }
   // 没辙了, arena should push back a batch
-  logger->warn(
+  _M_batch_logger->warn(
     "unable to find a satified segment in {}/batch{}", mmgr_name(), id());
   return nullptr;
 }
@@ -240,7 +242,7 @@ int
 batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 {
   if (segment->batch_id != this->id()) {
-    logger->error(
+    _M_batch_logger->error(
       "segment->batch_id doesn't match batch's. expect {}, but received {}",
       this->id(),
       segment->batch_id);
@@ -252,10 +254,10 @@ batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
         return bin->free(segment);
       }
     }
-    logger->error("unalbe to find the allocate bin.");
+    _M_batch_logger->error("unalbe to find the allocate bin.");
     return -1;
   } else {
-    logger->error("unalbe to find the allocate bin.");
+    _M_batch_logger->error("unalbe to find the allocate bin.");
     return -1;
   }
 }

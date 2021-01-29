@@ -19,7 +19,7 @@ protected:
   std::mutex          mtx_;
   std::string_view    memmgr_name_;
   std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
-  std::shared_ptr<spdlog::logger>                           logger;
+  std::shared_ptr<spdlog::logger>                           _M_instbin_logger;
 
 public:
   explicit instant_bin(

@@ -23,7 +23,7 @@ protected:
   const size_t                    chunk_count_;
   size_t                          chunk_left_;
   std::vector<bool>               chunks_;
-  std::shared_ptr<spdlog::logger> logger;
+  std::shared_ptr<spdlog::logger> _M_statbin_logger;
 
   /**
    * @brief Convert nbytes to how many chunks needed to allocate

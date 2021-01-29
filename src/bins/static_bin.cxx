@@ -17,7 +17,7 @@ static_bin::static_bin(const size_t                    id,
   , chunk_size_(chunk_size)
   , chunk_count_(chunk_count)
   , chunks_(chunk_size_, true)
-  , logger(logger)
+  , _M_statbin_logger(logger)
 {
   logger->trace("正在初始化Static Bin...");
   logger->debug(
@@ -72,13 +72,13 @@ static_bin::malloc(const size_t nbytes) noexcept
   auto __chunkreq = this->chunk_req(nbytes);
   // insufficient memory in this bin
   if (__chunkreq > this->chunk_left()) {
-    logger->error("当前Static Bin的内存不足以分配!");
+    _M_statbin_logger->error("当前Static Bin的内存不足以分配!");
     return nullptr;
   }
 
   auto __iter = this->first_fit(__chunkreq);
   if (__iter == chunks_.end()) {
-    logger->error("当前Static Bin的内存不足以分配!");
+    _M_statbin_logger->error("当前Static Bin的内存不足以分配!");
     return nullptr;
   }
 

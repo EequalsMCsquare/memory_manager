@@ -28,7 +28,7 @@ protected:
 
   std::unique_ptr<shared_memory::shm_handle> handle_;
   std::vector<std::unique_ptr<static_bin>>   static_bins_;
-  std::shared_ptr<spdlog::logger>            logger;
+  std::shared_ptr<spdlog::logger>            _M_batch_logger;
 
   /**
    * @brief initialize shared memory handle for this batch

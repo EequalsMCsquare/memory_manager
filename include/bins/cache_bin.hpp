@@ -29,7 +29,7 @@ protected:
   std::pmr::unsynchronized_pool_resource pmr_pool_;
   std::map<size_t /* segment id */, void* /* segment buffer */> data_map_;
   std::string_view                                              memmgr_name_;
-  std::shared_ptr<spdlog::logger>                               logger;
+  std::shared_ptr<spdlog::logger> _M_cachbin_logger;
 
 public:
   explicit cache_bin(

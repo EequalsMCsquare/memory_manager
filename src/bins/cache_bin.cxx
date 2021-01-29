@@ -25,7 +25,7 @@ cache_bin::cache_bin(std::atomic_size_t&             segment_counter,
                      std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
   , memmgr_name_(memmgr_name)
-  , logger(logger)
+  , _M_cachbin_logger(logger)
 {
   logger->trace("正在初始化Cache bin...");
 
@@ -35,7 +35,7 @@ cache_bin::cache_bin(std::atomic_size_t&             segment_counter,
 void
 cache_bin::set_logger(std::shared_ptr<spdlog::logger> logger)
 {
-  this->logger = logger;
+  this->_M_cachbin_logger = logger;
 }
 
 std::shared_ptr<cache_segment>
@@ -43,7 +43,7 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
 {
   // check buffer
   if (buffer == nullptr) {
-    logger->error("Buffer的指针不能为空指针!");
+    _M_cachbin_logger->error("Buffer的指针不能为空指针!");
     return nullptr;
   }
   auto __seg         = std::make_shared<cache_segment>();
@@ -52,7 +52,7 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
   if (__alloc_buff == nullptr) {
-    logger->error("分配{} bytes时失败!可能是内存不足", size);
+    _M_cachbin_logger->error("分配{} bytes时失败!可能是内存不足", size);
     return nullptr;
   }
   // copy data to pool
@@ -84,7 +84,7 @@ cache_bin::set(const size_t segment_id,
 {
   // check buffer
   if (buffer == nullptr) {
-    logger->error("Buffer的指针不能为空指针!");
+    _M_cachbin_logger->error("Buffer的指针不能为空指针!");
     return -1;
   }
   // check if segment_id exist
@@ -105,8 +105,8 @@ cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
   // find ptr by segment->id_
   auto __iter = this->data_map_.find(segment->id);
   if (__iter == this->data_map_.end()) {
-    logger->error("没有在当前Cache bin中找到这个segment! segment id: {}",
-                  segment->id);
+    _M_cachbin_logger->error(
+      "没有在当前Cache bin中找到这个segment! segment id: {}", segment->id);
     return -1;
   }
   auto __pair = __iter->second;

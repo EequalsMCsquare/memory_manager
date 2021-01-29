@@ -28,7 +28,7 @@ class mmgr
 {
 
 private:
-  std::shared_ptr<spdlog::logger>     logger_;
+  std::shared_ptr<spdlog::logger>     _M_mmgr_logger;
   std::mutex                          mtx_;
   std::shared_ptr<instant_bin>        instant_bin_;
   std::shared_ptr<cache_bin>          cache_bin_;
@@ -63,6 +63,7 @@ protected:
   mmgr()            = delete;
   mmgr(mmgr_config&&,
        std::shared_ptr<spdlog::logger> = spdlog::default_logger());
+  virtual ~mmgr();
   void set_logger(std::shared_ptr<spdlog::logger>);
 
 public:

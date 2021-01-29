@@ -8,7 +8,7 @@ instant_bin::instant_bin(std::atomic_size_t&             segment_counter,
                          std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
   , memmgr_name_(memmgr_name)
-  , logger(logger)
+  , _M_instbin_logger(logger)
 {}
 
 std::shared_ptr<instant_segment>
@@ -35,7 +35,7 @@ instant_bin::free(std::shared_ptr<instant_segment> segment) noexcept
   // TODO:
   // !这里有点问题, 应该先判断Segment的ref_count！
   if (segment->mmgr_name != this->memmgr_name_) {
-    logger->error("Segment 的memmgr名字与当前Instant Bin的不一致!");
+    _M_instbin_logger->error("Segment 的memmgr名字与当前Instant Bin的不一致!");
     return -1;
   }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
