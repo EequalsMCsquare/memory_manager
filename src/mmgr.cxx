@@ -200,6 +200,16 @@ mmgr::set_logger(std::shared_ptr<spdlog::logger> logger)
   this->_M_mmgr_logger = logger;
 }
 
+std::shared_ptr<base_segment>
+mmgr::get_segment(const size_t segment_id) noexcept
+{
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
+    return {};
+  }
+  return __iter->second;
+}
+
 std::string_view
 mmgr::memmgr_name() const noexcept
 {

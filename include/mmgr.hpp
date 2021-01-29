@@ -41,32 +41,30 @@ private:
   // return new added batch sptr
   std::shared_ptr<batch> add_BATCH();
 
-protected:
   bool                                            is_initialized_;
   std::atomic_size_t                              segment_counter_{ 0 };
   const mmgr_config                               config_;
   std::map<size_t, std::shared_ptr<base_segment>> segment_table_;
 
-  std::shared_ptr<cache_segment> cachbin_STORE(const size_t size,
-                                               const void*  buffer) noexcept;
-  int   cachbin_DEALLOC(const size_t segment_id) noexcept;
-  void* cachbin_RETRIEVE(const size_t segment_id) noexcept;
-
-  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size) noexcept;
-  int instbin_DEALLOC(const size_t segment_id) noexcept;
-
-  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;
-  int statbin_DEALLOC(const size_t segment_id) noexcept;
-
+public:
   mmgr(const mmgr&) = delete;
   mmgr(mmgr&&)      = delete;
   mmgr()            = delete;
   mmgr(mmgr_config&&,
        std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   virtual ~mmgr();
-  void set_logger(std::shared_ptr<spdlog::logger>);
 
-public:
+  std::shared_ptr<cache_segment> cachbin_STORE(const size_t size,
+                                               const void*  buffer) noexcept;
+  int   cachbin_DEALLOC(const size_t segment_id) noexcept;
+  void* cachbin_RETRIEVE(const size_t segment_id) noexcept;
+  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size) noexcept;
+  int instbin_DEALLOC(const size_t segment_id) noexcept;
+  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;
+  int statbin_DEALLOC(const size_t segment_id) noexcept;
+  std::shared_ptr<base_segment> get_segment(const size_t) noexcept;
+  void                          set_logger(std::shared_ptr<spdlog::logger>);
+
   std::string_view memmgr_name() const noexcept;
 };
 
