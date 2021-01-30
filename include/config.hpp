@@ -1,5 +1,5 @@
 #pragma once
 
 #ifndef ALIGNMENT
-#define ALIGNMENT 32
+#define ALIGNMENT 8
 #endif
