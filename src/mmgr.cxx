@@ -5,21 +5,38 @@
 #include <memory>
 #include <mutex>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 #include <utility>
 
 namespace shm_kernel::memory_manager {
 
-mmgr::mmgr(mmgr_config&& config, std::shared_ptr<spdlog::logger> logger)
-  : config_(config)
+void
+mmgr::PRE_CHECK() const
+{
+  if (this->batch_bin_count_.size() != this->batch_bin_size_.size()) {
+    _M_mmgr_logger->critical("Batch Bin Size的长度与Batch Bin Count的不一致!");
+    throw std::runtime_error(
+      "batch_bin_size.size() != batch_bin_count.size()!");
+  }
+}
+
+mmgr::mmgr(std::string&&                   name,
+           std::vector<size_t>&&           batch_bin_size,
+           std::vector<size_t>&&           batch_bin_count,
+           std::shared_ptr<spdlog::logger> logger)
+  : name_(name)
+  , batch_bin_count_(batch_bin_count)
+  , batch_bin_size_(batch_bin_size)
   , _M_mmgr_logger(logger)
 {
   _M_mmgr_logger->trace("正在初始化Memory Manager...");
-  this->check_CONFIG();
+  this->PRE_CHECK();
   this->init_INSTANT_BIN();
   this->init_CACHE_BIN();
   this->add_BATCH();
-  logger->trace("Memory Manager 初始化完毕!");
+  _M_mmgr_logger->trace("Memory Manager 初始化完毕!");
 }
+
 mmgr::~mmgr()
 {
   _M_mmgr_logger->trace("正在清理shm_kernel::memory_manager::mmgr...");
@@ -28,52 +45,41 @@ mmgr::~mmgr()
 }
 
 void
-mmgr::check_CONFIG() const
-{
-  // TODO
-}
-
-void
 mmgr::init_INSTANT_BIN()
 {
   this->instant_bin_ = std::make_shared<instant_bin>(
-    this->segment_counter_, this->memmgr_name(), this->_M_mmgr_logger);
+    this->segment_counter_, this->name(), this->_M_mmgr_logger);
 }
 
 void
 mmgr::init_CACHE_BIN()
 {
-  this->cache_bin_ = std::make_shared<cache_bin>(
-    segment_counter_, memmgr_name(), this->_M_mmgr_logger);
+  this->cache_bin_ =
+    std::make_shared<cache_bin>(segment_counter_, name(), this->_M_mmgr_logger);
 }
 
 std::shared_ptr<batch>
 mmgr::add_BATCH()
 {
   std::lock_guard<std::mutex> GG(this->mtx_);
-  this->batches_.push_back(std::make_shared<batch>(this->memmgr_name(),
+  this->batches_.push_back(std::make_shared<batch>(this->name(),
                                                    batches_.size(),
                                                    segment_counter_,
-                                                   config_.batch_bin_size,
-                                                   config_.batch_bin_count,
+                                                   batch_bin_size_,
+                                                   batch_bin_count_,
                                                    this->_M_mmgr_logger));
   return this->batches_.back();
 }
 
 std::shared_ptr<cache_segment>
-mmgr::cachbin_STORE(const size_t size, const void* buffer) noexcept
+mmgr::cachbin_STORE(const void* buffer, const size_t size) noexcept
 {
   if (buffer == nullptr) {
     _M_mmgr_logger->error("Buffer 不能为空指针!");
     return nullptr;
   }
-  if (size > this->config_.cache_bin_eps) {
-    _M_mmgr_logger->error("Size 不能大于Cache Bin Eps({})!",
-                          config_.cache_bin_eps);
-    return nullptr;
-  }
   auto __seg       = this->cache_bin_->store(buffer, size);
-  __seg->mmgr_name = this->memmgr_name();
+  __seg->mmgr_name = this->name();
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
@@ -82,6 +88,26 @@ mmgr::cachbin_STORE(const size_t size, const void* buffer) noexcept
     return nullptr;
   }
   return __seg;
+}
+
+int
+mmgr::cachbin_SET(const size_t segment_id,
+                  const void*  buffer,
+                  const size_t size) noexcept
+{
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
+    _M_mmgr_logger->error("没有找到Segment!");
+    return -1;
+  }
+  int rv = this->cache_bin_->set(segment_id, buffer, size);
+  if (rv == 0) {
+    __iter->second->size = size;
+    _M_mmgr_logger->trace("Segment {}修改成功", segment_id);
+    return 0;
+  }
+  _M_mmgr_logger->error("Segment {}修改失败!");
+  return -1;
 }
 
 void*
@@ -103,13 +129,8 @@ mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
 std::shared_ptr<instant_segment>
 mmgr::instbin_ALLOC(const size_t size) noexcept
 {
-  if (size < this->config_.instant_bin_eps) {
-    _M_mmgr_logger->error("Size 不能小于 Instant Bin Eps({})",
-                          config_.instant_bin_eps);
-    return nullptr;
-  }
   auto __seg       = this->instant_bin_->malloc(size);
-  __seg->mmgr_name = this->memmgr_name();
+  __seg->mmgr_name = this->name();
   auto __iter_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__iter_rv.second) {
@@ -123,11 +144,6 @@ mmgr::instbin_ALLOC(const size_t size) noexcept
 std::shared_ptr<static_segment>
 mmgr::statbin_ALLOC(const size_t size) noexcept
 {
-  if (size <= this->config_.cache_bin_eps) {
-    _M_mmgr_logger->error("Size 不能小于Cache Bin Eps({})",
-                          config_.cache_bin_eps);
-    return nullptr;
-  }
   std::shared_ptr<static_segment> __seg;
   for (const auto& batch : batches_) {
     __seg = batch->allocate(size);
@@ -146,7 +162,7 @@ mmgr::statbin_ALLOC(const size_t size) noexcept
       return nullptr;
     }
   }
-  __seg->mmgr_name = this->memmgr_name();
+  __seg->mmgr_name = this->name();
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
@@ -240,18 +256,24 @@ mmgr::get_segment(const size_t segment_id) noexcept
 }
 
 std::string_view
-mmgr::memmgr_name() const noexcept
+mmgr::name() const noexcept
 {
-  return this->config_.name;
-}
-const mmgr_config&
-mmgr::config() const noexcept
-{
-  return this->config_;
+  return this->name_;
 }
 size_t
 mmgr::segment_count() const noexcept
 {
   return this->segment_table_.size();
+}
+
+const std::vector<size_t>&
+mmgr::batch_bin_size() const noexcept
+{
+  return this->batch_bin_size_;
+}
+const std::vector<size_t>&
+mmgr::batch_bin_count() const noexcept
+{
+  return this->batch_bin_count_;
 }
 }

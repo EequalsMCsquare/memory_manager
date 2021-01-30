@@ -419,10 +419,8 @@ SCENARIO("allocate with mmgr", "[mmgr]")
 {
   GIVEN("A mmgr")
   {
-    libmem::mmgr pool(
-      libmem::mmgr_config{ "test", 1_KB, 1_MB, { 128 }, { 100 } });
-
-    WHEN("Store a long ")
+    libmem::mmgr pool("test", { 128 }, { 100 });
+    WHEN("store a long with cache bin")
     {
       long num   = 100;
       auto __seg = pool.cachbin_STORE(8, &num);

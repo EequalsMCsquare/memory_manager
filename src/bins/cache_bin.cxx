@@ -24,7 +24,7 @@ cache_bin::cache_bin(std::atomic_size_t&             segment_counter,
                      std::string_view                memmgr_name,
                      std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
-  , memmgr_name_(memmgr_name)
+  , mmgr_name_(memmgr_name)
   , _M_cachbin_logger(logger)
 {
   logger->trace("正在初始化Cache bin...");
@@ -46,9 +46,10 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
     _M_cachbin_logger->error("Buffer的指针不能为空指针!");
     return nullptr;
   }
-  auto __seg         = std::make_shared<cache_segment>();
-  __seg->id          = this->segment_counter_ref_++;
-  __seg->size        = size;
+  const size_t __tmp_id = this->segment_counter_ref_++;
+  auto         __seg =
+    std::make_shared<cache_segment>(this->mmgr_name_, __tmp_id, size);
+
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
   if (__alloc_buff == nullptr) {
@@ -79,7 +80,7 @@ cache_bin::retrieve(const size_t segment_id) noexcept
 
 int
 cache_bin::set(const size_t segment_id,
-               void*        buffer,
+               const void*  buffer,
                const size_t size) noexcept
 {
   // check buffer

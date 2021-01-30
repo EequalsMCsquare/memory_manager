@@ -28,7 +28,7 @@ protected:
   std::mutex                             mtx_;
   std::pmr::unsynchronized_pool_resource pmr_pool_;
   std::map<size_t /* segment id */, void* /* segment buffer */> data_map_;
-  std::string_view                                              memmgr_name_;
+  std::string_view                                              mmgr_name_;
   std::shared_ptr<spdlog::logger> _M_cachbin_logger;
 
 public:
@@ -44,7 +44,9 @@ public:
 
   void* retrieve(const size_t segment_id) noexcept;
 
-  int set(const size_t segment_id, void* buffer, const size_t size) noexcept;
+  int set(const size_t segment_id,
+          const void*  buffer,
+          const size_t size) noexcept;
 
   int free(std::shared_ptr<cache_segment> segment) noexcept;
 
