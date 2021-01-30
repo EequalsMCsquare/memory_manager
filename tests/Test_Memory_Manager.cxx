@@ -423,7 +423,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
     WHEN("store a long with cache bin")
     {
       long num   = 100;
-      auto __seg = pool.cachbin_STORE(8, &num);
+      auto __seg = pool.cachbin_STORE(&num, 8);
       REQUIRE(__seg != nullptr);
       REQUIRE(__seg->id == 0);
       REQUIRE(__seg->size == 8);
