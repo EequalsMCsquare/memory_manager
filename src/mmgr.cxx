@@ -90,26 +90,6 @@ mmgr::cachbin_STORE(const void* buffer, const size_t size) noexcept
   return __seg;
 }
 
-int
-mmgr::cachbin_SET(const size_t segment_id,
-                  const void*  buffer,
-                  const size_t size) noexcept
-{
-  auto __iter = this->segment_table_.find(segment_id);
-  if (__iter == this->segment_table_.end()) {
-    _M_mmgr_logger->error("没有找到Segment!");
-    return -1;
-  }
-  int rv = this->cache_bin_->set(segment_id, buffer, size);
-  if (rv == 0) {
-    __iter->second->size = size;
-    _M_mmgr_logger->trace("Segment {}修改成功", segment_id);
-    return 0;
-  }
-  _M_mmgr_logger->error("Segment {}修改失败!");
-  return -1;
-}
-
 void*
 mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
 {

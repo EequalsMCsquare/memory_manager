@@ -432,7 +432,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
       {
         REQUIRE(pool.segment_count() == 1);
       }
-      AND_WHEN("Retrive the segment")
+      AND_WHEN("retrive the segment")
       {
         long* __buff = static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id));
         REQUIRE(__buff != nullptr);

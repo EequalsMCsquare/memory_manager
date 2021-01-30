@@ -44,10 +44,6 @@ public:
 
   void* retrieve(const size_t segment_id) noexcept;
 
-  int set(const size_t segment_id,
-          const void*  buffer,
-          const size_t size) noexcept;
-
   int free(std::shared_ptr<cache_segment> segment) noexcept;
 
   void clear() noexcept;

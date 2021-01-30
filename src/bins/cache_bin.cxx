@@ -79,28 +79,6 @@ cache_bin::retrieve(const size_t segment_id) noexcept
 }
 
 int
-cache_bin::set(const size_t segment_id,
-               const void*  buffer,
-               const size_t size) noexcept
-{
-  // check buffer
-  if (buffer == nullptr) {
-    _M_cachbin_logger->error("Buffer的指针不能为空指针!");
-    return -1;
-  }
-  // check if segment_id exist
-  if (auto __iter = this->data_map_.find(segment_id);
-      __iter != this->data_map_.end()) {
-    // exist
-    void* new_buffer = this->pmr_pool_.allocate(size);
-    std::memcpy(new_buffer, buffer, size);
-    return 0;
-  }
-  // not found
-  return -1;
-}
-
-int
 cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
 {
   // find ptr by segment->id_
