@@ -414,3 +414,32 @@ TEST_CASE("double free error", "[static_bin]")
   REQUIRE(rv2 == -2);
   REQUIRE(bin.chunk_left() == 6);
 }
+
+SCENARIO("allocate with mmgr", "[mmgr]")
+{
+  GIVEN("A mmgr")
+  {
+    libmem::mmgr pool(
+      libmem::mmgr_config{ "test", 1_KB, 1_MB, { 128 }, { 100 } });
+
+    WHEN("Store a long ")
+    {
+      long num   = 100;
+      auto __seg = pool.cachbin_STORE(8, &num);
+      REQUIRE(__seg != nullptr);
+      REQUIRE(__seg->id == 0);
+      REQUIRE(__seg->size == 8);
+      REQUIRE(__seg->mmgr_name.compare("test") == 0);
+      THEN("segment_table should change")
+      {
+        REQUIRE(pool.segment_count() == 1);
+      }
+      AND_WHEN("Retrive the segment")
+      {
+        long* __buff = static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id));
+        REQUIRE(__buff != nullptr);
+        REQUIRE(*__buff == num);
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <spdlog/spdlog.h>
+#include <utility>
 
 namespace shm_kernel::memory_manager {
 
@@ -71,8 +72,18 @@ mmgr::cachbin_STORE(const size_t size, const void* buffer) noexcept
                           config_.cache_bin_eps);
     return nullptr;
   }
-  return this->cache_bin_->store(buffer, size);
+  auto __seg       = this->cache_bin_->store(buffer, size);
+  __seg->mmgr_name = this->memmgr_name();
+  auto __insert_rv =
+    this->segment_table_.insert(std::make_pair(__seg->id, __seg));
+  if (!__insert_rv.second) {
+    _M_mmgr_logger->error("无法将Segment添加进Table!");
+    this->cache_bin_->free(__seg);
+    return nullptr;
+  }
+  return __seg;
 }
+
 void*
 mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
 {
@@ -97,7 +108,16 @@ mmgr::instbin_ALLOC(const size_t size) noexcept
                           config_.instant_bin_eps);
     return nullptr;
   }
-  return this->instant_bin_->malloc(size);
+  auto __seg       = this->instant_bin_->malloc(size);
+  __seg->mmgr_name = this->memmgr_name();
+  auto __iter_rv =
+    this->segment_table_.insert(std::make_pair(__seg->id, __seg));
+  if (!__iter_rv.second) {
+    _M_mmgr_logger->error("无法将Segment添加进Table!");
+    this->instant_bin_->free(__seg);
+    return nullptr;
+  }
+  return __seg;
 }
 
 std::shared_ptr<static_segment>
@@ -120,12 +140,21 @@ mmgr::statbin_ALLOC(const size_t size) noexcept
   if (!__seg) {
     auto __new_batch = this->add_BATCH();
     __seg            = __new_batch->allocate(size);
+    // if still fail
+    if (!__seg) {
+      _M_mmgr_logger->error("新增的Batch也无法分配空间, 真奇怪...");
+      return nullptr;
+    }
   }
-  // if still fail
-  if (!__seg) {
-    _M_mmgr_logger->error("新增的Batch也无法分配空间, 真奇怪...");
+  __seg->mmgr_name = this->memmgr_name();
+  auto __insert_rv =
+    this->segment_table_.insert(std::make_pair(__seg->id, __seg));
+  if (!__insert_rv.second) {
+    this->batches_[__seg->batch_id]->deallocate(__seg);
+    _M_mmgr_logger->error("无法将Segment添加进Table.");
     return nullptr;
   }
+  return __seg;
 
   // will never reach this step.
   return nullptr;
@@ -214,5 +243,15 @@ std::string_view
 mmgr::memmgr_name() const noexcept
 {
   return this->config_.name;
+}
+const mmgr_config&
+mmgr::config() const noexcept
+{
+  return this->config_;
+}
+size_t
+mmgr::segment_count() const noexcept
+{
+  return this->segment_table_.size();
 }
 }

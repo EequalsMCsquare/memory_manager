@@ -65,7 +65,9 @@ public:
   std::shared_ptr<base_segment> get_segment(const size_t) noexcept;
   void                          set_logger(std::shared_ptr<spdlog::logger>);
 
-  std::string_view memmgr_name() const noexcept;
+  std::string_view   memmgr_name() const noexcept;
+  const mmgr_config& config() const noexcept;
+  size_t             segment_count() const noexcept;
 };
 
 }
