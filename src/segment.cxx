@@ -12,7 +12,7 @@ segmentdesc::init_with_cache(const cache_segment& seg)
 {
   this->segment_id   = seg.id;
   this->segment_size = seg.size;
-  this->segment_type = SEG_TYPE::cachbin_segment;
+  this->segment_type = seg.type;
   std::strncpy(this->mmgr_name, seg.mmgr_name.data(), 128);
 }
 void
@@ -20,7 +20,7 @@ segmentdesc::init_with_static(const static_segment& seg)
 {
   this->segment_id   = seg.id;
   this->segment_size = seg.size;
-  this->segment_type = SEG_TYPE::statbin_segment;
+  this->segment_type = seg.type;
   this->addr_pshift  = seg.addr_pshift;
   this->batch_id     = seg.batch_id;
   this->bin_id       = seg.bin_id;
@@ -29,7 +29,7 @@ segmentdesc::init_with_static(const static_segment& seg)
 void
 segmentdesc::init_with_instant(const instant_segment& seg)
 {
-  this->segment_type = SEG_TYPE::instbin_segment;
+  this->segment_type = seg.type;
   this->segment_id   = seg.id;
   this->segment_size = seg.size;
   this->addr_pshift  = 0;
@@ -38,11 +38,11 @@ segmentdesc::init_with_instant(const instant_segment& seg)
 
 segmentdesc::segmentdesc(base_segment&& seg)
 {
-  if (typeid(seg) == typeid(cache_segment)) {
+  if (seg.type == SEG_TYPE::cachbin_segment) {
     this->init_with_cache(dynamic_cast<cache_segment&>(seg));
-  } else if (typeid(seg) == typeid(instant_segment)) {
+  } else if (seg.type == SEG_TYPE::instbin_segment) {
     this->init_with_instant(dynamic_cast<instant_segment&>(seg));
-  } else if (typeid(seg) == typeid(static_segment)) {
+  } else if (seg.type == SEG_TYPE::statbin_segment) {
     this->init_with_static(dynamic_cast<static_segment&>(seg));
   } else {
     throw std::runtime_error(fmt::format(
@@ -111,6 +111,43 @@ static_segment::to_segmentdesc() const noexcept
 {
   return segmentdesc(*this);
 }
+
+cache_segment::cache_segment(std::string_view mmgr_name,
+                             const size_t     id,
+                             const size_t     size)
+{
+  this->mmgr_name = mmgr_name;
+  this->id        = id;
+  this->size      = size;
+  this->type      = SEG_TYPE::cachbin_segment;
+}
+
+instant_segment::instant_segment(std::string_view mmgr_name,
+                                 const size_t     id,
+                                 const size_t     size)
+{
+  this->mmgr_name = mmgr_name;
+  this->id        = id;
+  this->size      = size;
+  this->type      = SEG_TYPE::instbin_segment;
+}
+
+static_segment::static_segment(std::string_view mmgr_name,
+                               const size_t     id,
+                               const size_t     size,
+                               const size_t     batch_id,
+                               const size_t     bin_id,
+                               const size_t     addr_pshift)
+{
+  this->mmgr_name   = mmgr_name;
+  this->id          = id;
+  this->size        = size;
+  this->type        = SEG_TYPE::cachbin_segment;
+  this->batch_id    = batch_id;
+  this->bin_id      = bin_id;
+  this->addr_pshift = addr_pshift;
+}
+
 }
 
 // template<typename FormatContext>

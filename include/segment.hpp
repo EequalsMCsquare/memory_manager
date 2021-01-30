@@ -20,6 +20,7 @@ struct base_segment
   std::string_view mmgr_name;
   size_t           id;
   size_t           size;
+  SEG_TYPE         type;
 
   virtual segmentdesc to_segmentdesc() const noexcept = 0;
 };
@@ -30,23 +31,33 @@ struct base_segment
  */
 struct cache_segment : base_segment
 {
-  inline static SEG_TYPE type = SEG_TYPE::cachbin_segment;
-  segmentdesc            to_segmentdesc() const noexcept override;
+  cache_segment() = default;
+  cache_segment(std::string_view mmgr_name, const size_t id, const size_t size);
+  segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct instant_segment : base_segment
 {
-  inline static SEG_TYPE type = SEG_TYPE::instbin_segment;
-
+  instant_segment() = default;
+  instant_segment(std::string_view mmgr_name,
+                  const size_t     id,
+                  const size_t     size);
   segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct static_segment : base_segment
 {
-  inline static SEG_TYPE type = SEG_TYPE::statbin_segment;
-  size_t                 batch_id;
-  size_t                 bin_id;
-  size_t                 addr_pshift;
+  static_segment() = default;
+  static_segment(std::string_view mmgr_name,
+                 const size_t     id,
+                 const size_t     size,
+                 const size_t     batch_id,
+                 const size_t     bin_id,
+                 const size_t     addr_pshift);
+
+  size_t batch_id;
+  size_t bin_id;
+  size_t addr_pshift;
 
   segmentdesc to_segmentdesc() const noexcept override;
 };

@@ -63,8 +63,8 @@ public:
   std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;
   int statbin_DEALLOC(const size_t segment_id) noexcept;
   std::shared_ptr<base_segment> get_segment(const size_t) noexcept;
-  void                          set_logger(std::shared_ptr<spdlog::logger>);
 
+  void               set_logger(std::shared_ptr<spdlog::logger>);
   std::string_view   memmgr_name() const noexcept;
   const mmgr_config& config() const noexcept;
   size_t             segment_count() const noexcept;
