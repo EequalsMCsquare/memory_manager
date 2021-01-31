@@ -1,5 +1,6 @@
 #include "bins/static_bin.hpp"
 #include "config.hpp"
+#include "segment.hpp"
 
 #include <algorithm>
 
@@ -136,7 +137,7 @@ static_bin::free(std::shared_ptr<static_segment> segment) noexcept
   // check if the chunks are already marked as available.
   for (auto __iter = __start_chunk; __iter != __end_chunk; __iter++) {
     if (*__iter == true) {
-      return -2;
+      return -1;
     }
   }
   // mark the chunks available

@@ -31,14 +31,14 @@ struct base_segment
  */
 struct cache_segment : base_segment
 {
-  cache_segment() = default;
+  cache_segment();
   cache_segment(std::string_view mmgr_name, const size_t id, const size_t size);
   segmentdesc to_segmentdesc() const noexcept override;
 };
 
 struct instant_segment : base_segment
 {
-  instant_segment() = default;
+  instant_segment();
   instant_segment(std::string_view mmgr_name,
                   const size_t     id,
                   const size_t     size);
@@ -47,7 +47,7 @@ struct instant_segment : base_segment
 
 struct static_segment : base_segment
 {
-  static_segment() = default;
+  static_segment();
   static_segment(std::string_view mmgr_name,
                  const size_t     id,
                  const size_t     size,

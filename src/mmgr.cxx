@@ -165,7 +165,7 @@ mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
     return -1;
   }
   // if found  cehck if segment is instant segment
-  if (typeid(instant_segment) != typeid(*__iter->second.get())) {
+  if (__iter->second->type != SEG_TYPE::instbin_segment) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::instant_segment",
       segment_id);
@@ -174,7 +174,13 @@ mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
   // cast to instant segment
   auto __seg = std::dynamic_pointer_cast<instant_segment>(__iter->second);
   // free
-  return this->instant_bin_->free(__seg);
+  int rv = this->instant_bin_->free(__seg);
+  if (rv == 0) {
+    this->segment_table_.erase(__iter);
+    return 0;
+  }
+  _M_mmgr_logger->error("Segment dealloc失败!");
+  return -1;
 }
 
 int
@@ -186,7 +192,7 @@ mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
     return -1;
   }
   // if found  cehck if segment is static segment
-  if (typeid(static_segment) != typeid(*__iter->second.get())) {
+  if (__iter->second->type != SEG_TYPE::statbin_segment) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::static_segment",
       segment_id);
@@ -195,7 +201,14 @@ mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
   // cast to static segment
   auto __seg = std::dynamic_pointer_cast<static_segment>(__iter->second);
   // free
-  return this->batches_[__seg->batch_id]->deallocate(__seg);
+  int rv = this->batches_[__seg->batch_id]->deallocate(__seg);
+  if (rv == 0) {
+    this->segment_table_.erase(__iter);
+    return 0;
+  }
+  // fail
+  _M_mmgr_logger->error("Segment dealloc失败");
+  return -1;
 }
 
 int
@@ -207,7 +220,7 @@ mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
     return -1;
   }
   // if found  cehck if segment is cache segment
-  if (typeid(static_segment) != typeid(*__iter->second.get())) {
+  if (__iter->second->type != SEG_TYPE::cachbin_segment) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::cache_segment",
       segment_id);
@@ -216,7 +229,14 @@ mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
   // cast to cache segment
   auto __seg = std::dynamic_pointer_cast<cache_segment>(__iter->second);
   // free
-  return this->cache_bin_->free(__seg);
+  int rv = this->cache_bin_->free(__seg);
+  if (rv == 0) {
+    this->segment_table_.erase(__iter);
+    return 0;
+  }
+  // fail
+  _M_mmgr_logger->error("Segment dealloc失败!");
+  return -1;
 }
 
 void

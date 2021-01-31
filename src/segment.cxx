@@ -122,6 +122,11 @@ cache_segment::cache_segment(std::string_view mmgr_name,
   this->type      = SEG_TYPE::cachbin_segment;
 }
 
+cache_segment::cache_segment()
+{
+  this->type = SEG_TYPE::cachbin_segment;
+}
+
 instant_segment::instant_segment(std::string_view mmgr_name,
                                  const size_t     id,
                                  const size_t     size)
@@ -130,6 +135,11 @@ instant_segment::instant_segment(std::string_view mmgr_name,
   this->id        = id;
   this->size      = size;
   this->type      = SEG_TYPE::instbin_segment;
+}
+
+instant_segment::instant_segment()
+{
+  this->type = SEG_TYPE::instbin_segment;
 }
 
 static_segment::static_segment(std::string_view mmgr_name,
@@ -146,6 +156,11 @@ static_segment::static_segment(std::string_view mmgr_name,
   this->batch_id    = batch_id;
   this->bin_id      = bin_id;
   this->addr_pshift = addr_pshift;
+}
+
+static_segment::static_segment()
+{
+  this->type = SEG_TYPE::statbin_segment;
 }
 
 }

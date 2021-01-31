@@ -263,7 +263,7 @@ TEST_CASE("when create static bin with unaligned chunk size, thorw",
 {
   std::atomic_size_t counter = 1;
   REQUIRE_THROWS(libmem::static_bin(0, counter, 31, 200, 0));
-  REQUIRE_THROWS(libmem::static_bin(0, counter, 48, 200, 0));
+  REQUIRE_THROWS(libmem::static_bin(0, counter, 47, 200, 0));
   REQUIRE_THROWS(libmem::static_bin(0, counter, 127, 200, 0));
   REQUIRE_NOTHROW(libmem::static_bin(0, counter, 128, 200, 0));
   REQUIRE_NOTHROW(libmem::static_bin(0, counter, 1024, 200, 0));
@@ -401,7 +401,7 @@ TEST_CASE("double free error", "[static_bin]")
   __seg->addr_pshift = 0;
   __seg->size        = 128;
   auto rv1           = bin.free(__seg);
-  REQUIRE(rv1 == -2);
+  REQUIRE(rv1 == -1);
   REQUIRE(bin.chunk_left() == 10);
 
   auto seg = bin.malloc(128);
@@ -411,7 +411,7 @@ TEST_CASE("double free error", "[static_bin]")
 
   seg->size = 256;
   auto rv2  = bin.free(seg);
-  REQUIRE(rv2 == -2);
+  REQUIRE(rv2 == -1);
   REQUIRE(bin.chunk_left() == 6);
 }
 
@@ -437,6 +437,52 @@ SCENARIO("allocate with mmgr", "[mmgr]")
         long* __buff = static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id));
         REQUIRE(__buff != nullptr);
         REQUIRE(*__buff == num);
+      }
+      AND_WHEN("dealloc the segment")
+      {
+        pool.cachbin_DEALLOC(__seg->id);
+        THEN("segment count should be 0")
+        {
+          REQUIRE(pool.segment_count() == 0);
+        }
+      }
+    }
+
+    WHEN("alloc with static bin")
+    {
+      auto __seg = pool.statbin_ALLOC(128);
+      REQUIRE(__seg != nullptr);
+      REQUIRE(__seg->batch_id == 0);
+      REQUIRE(__seg->bin_id == 0);
+      REQUIRE(__seg->id == 0);
+      REQUIRE(__seg->mmgr_name.compare("test") == 0);
+      REQUIRE(pool.segment_count() == 1);
+
+      WHEN("dealloc the segment")
+      {
+        pool.statbin_DEALLOC(__seg->id);
+        THEN("segment count should be 0")
+        {
+          REQUIRE(pool.segment_count() == 0);
+        }
+      }
+    }
+
+    WHEN("alloc with instant bin")
+    {
+      auto __seg = pool.instbin_ALLOC(32_MB);
+      REQUIRE(__seg->type == libmem::SEG_TYPE::instbin_segment);
+      REQUIRE(__seg->mmgr_name.compare("test") == 0);
+      REQUIRE(__seg->id == 0);
+      REQUIRE(__seg->size >= 32_MB);
+
+      WHEN("dealloc the segment")
+      {
+        pool.instbin_DEALLOC(__seg->id);
+        THEN("segment count should be 0")
+        {
+          REQUIRE(pool.segment_count() == 0);
+        }
       }
     }
   }
