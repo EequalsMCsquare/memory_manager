@@ -20,9 +20,9 @@ mmgr::PRE_CHECK() const
   }
 }
 
-mmgr::mmgr(std::string&&                   name,
-           std::vector<size_t>&&           batch_bin_size,
-           std::vector<size_t>&&           batch_bin_count,
+mmgr::mmgr(const std::string&              name,
+           const std::vector<size_t>&      batch_bin_size,
+           const std::vector<size_t>&      batch_bin_count,
            std::shared_ptr<spdlog::logger> logger)
   : name_(name)
   , batch_bin_count_(batch_bin_count)

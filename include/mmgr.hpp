@@ -46,9 +46,9 @@ public:
   mmgr(mmgr&&)      = delete;
   mmgr()            = delete;
 
-  mmgr(std::string&&         name,
-       std::vector<size_t>&& batch_bin_size,
-       std::vector<size_t>&& batch_bin_count,
+  mmgr(const std::string&         name,
+       const std::vector<size_t>& batch_bin_size,
+       const std::vector<size_t>& batch_bin_count,
        std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   virtual ~mmgr();
 
