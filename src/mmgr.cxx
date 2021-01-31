@@ -90,6 +90,28 @@ mmgr::cachbin_STORE(const void* buffer, const size_t size) noexcept
   return __seg;
 }
 
+int
+mmgr::cachbin_SET(const size_t segment_id,
+                  const void*  buffer,
+                  const size_t size) noexcept
+{
+  std::lock_guard<std::mutex> __lock(this->mtx_);
+  auto                        __iter = this->segment_table_.find(segment_id);
+  if (__iter != this->segment_table_.end()) {
+    int rv =
+      this->cache_bin_->set(segment_id, __iter->second->size, buffer, size);
+    if (rv == 0) {
+      return 0;
+    } else {
+      _M_mmgr_logger->error("Segment修改失败!");
+      return -1;
+    }
+  } else {
+    _M_mmgr_logger->error("没有找到Segment {}", segment_id);
+    return -1;
+  }
+}
+
 void*
 mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
 {

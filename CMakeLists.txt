@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(memory_manager
-  VERSION 0.7.3
+  VERSION 0.7.4
   DESCRIPTION "shm_kernel's memory handler component")
 
 set(CMAKE_CXX_STANDARD 17)

@@ -56,6 +56,9 @@ public:
                                                const size_t size) noexcept;
   int   cachbin_DEALLOC(const size_t segment_id) noexcept;
   void* cachbin_RETRIEVE(const size_t segment_id) noexcept;
+  int   cachbin_SET(const size_t segment_id,
+                    const void*  buffer,
+                    const size_t size) noexcept;
   std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size) noexcept;
   int instbin_DEALLOC(const size_t segment_id) noexcept;
   std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;

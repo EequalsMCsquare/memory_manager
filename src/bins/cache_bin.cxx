@@ -96,6 +96,25 @@ cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
   return 0;
 }
 
+int
+cache_bin::set(const size_t segment_id,
+               const size_t origin_size,
+               const void*  new_buffer,
+               const size_t new_size) noexcept
+{
+  std::lock_guard<std::mutex> __lock(mtx_);
+  auto                        __iter = this->data_map_.find(segment_id);
+  if (__iter == this->data_map_.end()) {
+    return -1;
+  } else {
+    this->pmr_pool_.deallocate(__iter->second, origin_size);
+    void* __new_addr = this->pmr_pool_.allocate(new_size);
+    std::memcpy(__new_addr, new_buffer, new_size);
+    __iter->second = __new_addr;
+    return 0;
+  }
+}
+
 void
 cache_bin::clear() noexcept
 {

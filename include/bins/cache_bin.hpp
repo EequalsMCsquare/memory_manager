@@ -46,6 +46,11 @@ public:
 
   int free(std::shared_ptr<cache_segment> segment) noexcept;
 
+  int set(const size_t segment_id,
+          const size_t origin_size,
+          const void*  new_buffer,
+          const size_t new_size) noexcept;
+
   void clear() noexcept;
 
   size_t segment_count() const noexcept;

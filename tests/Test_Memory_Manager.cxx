@@ -446,6 +446,25 @@ SCENARIO("allocate with mmgr", "[mmgr]")
           REQUIRE(pool.segment_count() == 0);
         }
       }
+      AND_WHEN("set a segment")
+      {
+        GIVEN("a new number")
+        {
+          long new_num = 200;
+          THEN("modify the value")
+          {
+            int rv = pool.cachbin_SET(__seg->id, &new_num, sizeof(long));
+            REQUIRE(rv == 0);
+            AND_THEN("retrive the new data")
+            {
+              long* __new_buff =
+                static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id));
+              REQUIRE(__new_buff != nullptr);
+              REQUIRE(*__new_buff == new_num);
+            }
+          }
+        }
+      }
     }
 
     WHEN("alloc with static bin")
