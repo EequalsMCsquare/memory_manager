@@ -9,7 +9,7 @@ class MmgrExcept : std::exception
 {
 
 private:
-  std::error_code _M_Ec;
+  std::string _M_What;
 
 public:
   MmgrExcept(const MmgrErrc ec);

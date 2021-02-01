@@ -76,6 +76,8 @@ install(FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/include/mem_literals.hpp
       ${CMAKE_CURRENT_SOURCE_DIR}/include/segment.hpp
       ${CMAKE_CURRENT_SOURCE_DIR}/include/mmgr.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/error_condition.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/except.hpp
 		DESTINATION 
 			include/shm_kernel)
 
