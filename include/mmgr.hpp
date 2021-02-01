@@ -12,11 +12,6 @@
 
 namespace shm_kernel::memory_manager {
 
-/**
- * @brief Memory Manager Config
- *
- */
-
 class mmgr
 {
 
@@ -52,18 +47,43 @@ public:
        std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   virtual ~mmgr();
 
+  std::shared_ptr<cache_segment> cachbin_STORE(const void*      buffer,
+                                               const size_t     size,
+                                               std::error_code& ec) noexcept;
   std::shared_ptr<cache_segment> cachbin_STORE(const void*  buffer,
-                                               const size_t size) noexcept;
-  int   cachbin_DEALLOC(const size_t segment_id) noexcept;
-  void* cachbin_RETRIEVE(const size_t segment_id) noexcept;
-  int   cachbin_SET(const size_t segment_id,
-                    const void*  buffer,
-                    const size_t size) noexcept;
-  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size) noexcept;
-  int instbin_DEALLOC(const size_t segment_id) noexcept;
-  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size) noexcept;
-  int statbin_DEALLOC(const size_t segment_id) noexcept;
-  std::shared_ptr<base_segment> get_segment(const size_t) noexcept;
+                                               const size_t size);
+
+  int cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int cachbin_DEALLOC(const size_t segment_id);
+
+  int cachbin_SET(const size_t     segment_id,
+                  const void*      buffer,
+                  const size_t     size,
+                  std::error_code& ec) noexcept;
+  int cachbin_SET(const size_t segment_id,
+                  const void*  buffer,
+                  const size_t size);
+
+  void* cachbin_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept;
+  void* cachbin_RETRIEVE(const size_t segment_id);
+
+  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t     size,
+                                                 std::error_code& ec) noexcept;
+  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size);
+
+  int instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int instbin_DEALLOC(const size_t segment_id);
+
+  std::shared_ptr<static_segment> statbin_ALLOC(const size_t     size,
+                                                std::error_code& ec) noexcept;
+  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size);
+
+  int statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int statbin_DEALLOC(const size_t segment_id);
+
+  std::shared_ptr<base_segment> get_segment(const size_t     segment_id,
+                                            std::error_code& ec) noexcept;
+  std::shared_ptr<base_segment> get_segment(const size_t segment_id);
 
   void                       set_logger(std::shared_ptr<spdlog::logger>);
   std::string_view           name() const noexcept;

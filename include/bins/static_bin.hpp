@@ -10,6 +10,7 @@
 #include <spdlog/logger.h>
 
 #include "segment.hpp"
+#include "error_condition.hpp"
 
 namespace shm_kernel::memory_manager {
 class static_bin
@@ -31,7 +32,7 @@ protected:
    * @param nbytes
    * @return const size_t
    */
-  inline const size_t chunk_req(const size_t& nbytes) noexcept;
+  size_t chunk_req(const size_t& nbytes) const noexcept;
 
   std::vector<bool>::iterator first_fit(const size_t& nbytes) noexcept;
 
@@ -44,7 +45,7 @@ public:
     const size_t&       base_pshift,
     std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
-  std::shared_ptr<static_segment> malloc(const size_t nbytes) noexcept;
+  std::shared_ptr<static_segment> malloc(const size_t nbytes, std::error_code& ec) noexcept;
 
   /**
    * @brief if free success, 0 will be returned.
@@ -54,18 +55,18 @@ public:
    * @param std::shared_ptr<base_segment>
    * @return int
    */
-  int free(std::shared_ptr<static_segment> segment) noexcept;
+  int free(std::shared_ptr<static_segment> segment, std::error_code& ec) noexcept;
 
   void clear() noexcept;
 
-  const size_t id() noexcept;
+  const size_t id() const noexcept;
 
-  const size_t base_pshift() noexcept;
+  const size_t base_pshift() const noexcept;
 
-  const size_t chunk_size() noexcept;
+  const size_t chunk_size() const noexcept;
 
-  const size_t chunk_count() noexcept;
+  const size_t chunk_count() const noexcept;
 
-  const size_t chunk_left() noexcept;
+  const size_t chunk_left() const noexcept;
 };
 } // namespace libmem

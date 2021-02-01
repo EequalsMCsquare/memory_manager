@@ -179,8 +179,9 @@ batch::init_shm(const size_t& buffsz)
 }
 
 std::shared_ptr<static_segment>
-batch::allocate(const size_t nbytes)
+batch::allocate(const size_t nbytes, std::error_code& ec) noexcept
 {
+  ec.clear();
   _M_batch_logger->trace("allocate {} bytes of segment", nbytes);
   // Too large, should've used instant bin
   if (nbytes > this->max_chunksz() * 8) {
@@ -188,9 +189,8 @@ batch::allocate(const size_t nbytes)
       "allocate size too large for static bin, please consider "
       "using instant bin instead! acceptable size should <= {}",
       this->max_chunksz() * 8);
-    // recoverable
-    throw std::runtime_error(
-      "required bytes too large! consider using instant bin instead.");
+    ec = MmgrErrc::TooBigForStaticBin;
+    return nullptr;
   }
   std::shared_ptr<static_segment> __segment;
 
@@ -201,7 +201,7 @@ batch::allocate(const size_t nbytes)
     auto __t_rem = nbytes % static_bins_[i]->chunk_size();
     // perfect match
     if (__t_rem == 0) {
-      __segment = static_bins_[i]->malloc(nbytes);
+      __segment = static_bins_[i]->malloc(nbytes, ec);
       if (__segment == nullptr) {
         __rem.push_back(std::numeric_limits<size_t>::max());
         continue;
@@ -209,10 +209,10 @@ batch::allocate(const size_t nbytes)
         // perfect match available
         __segment->batch_id  = this->id();
         __segment->mmgr_name = this->mmgr_name();
-        return std::move(__segment);
+        return __segment;
       }
     }
-    __rem.push_back(std::move(__t_rem));
+    __rem.push_back(__t_rem);
   }
   // if no perfect match, use the one with smallest remainder.
   size_t idx;
@@ -221,7 +221,7 @@ batch::allocate(const size_t nbytes)
     idx           = std::distance(__rem.begin(), min_iter);
     // change min_iter to max
     *min_iter = std::numeric_limits<size_t>::max();
-    __segment = this->static_bins_[idx]->malloc(nbytes);
+    __segment = this->static_bins_[idx]->malloc(nbytes, ec);
     if (__segment == nullptr) {
       // if fail to malloc with the bin, then fallback to next smallest
       // remainder bin.
@@ -229,29 +229,33 @@ batch::allocate(const size_t nbytes)
     } else {
       __segment->batch_id  = this->id();
       __segment->mmgr_name = this->mmgr_name();
-      return std::move(__segment);
+      return __segment;
     }
   }
   // 没辙了, arena should push back a batch
   _M_batch_logger->warn(
     "unable to find a satified segment in {}/batch{}", mmgr_name(), id());
+  ec = MmgrErrc::NoSuitableStaticBin;
   return nullptr;
 }
 
 int
-batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
+batch::deallocate(std::shared_ptr<static_segment> segment,
+                  std::error_code&                ec) noexcept
 {
+  ec.clear();
   if (segment->batch_id != this->id()) {
     _M_batch_logger->error(
       "segment->batch_id doesn't match batch's. expect {}, but received {}",
       this->id(),
       segment->batch_id);
+    ec = MmgrErrc::BatchUnmatched;
     return -1;
   }
   if (segment->bin_id < this->static_bins_.size()) {
     for (const auto& bin : this->static_bins_) {
       if (bin->id() == segment->bin_id) {
-        return bin->free(segment);
+        return bin->free(segment, ec);
       }
     }
     _M_batch_logger->error("unalbe to find the allocate bin.");
@@ -263,30 +267,30 @@ batch::deallocate(std::shared_ptr<static_segment> segment) noexcept
 }
 
 const size_t
-batch::max_chunksz() noexcept
+batch::max_chunksz() const noexcept
 {
   return this->static_bins_.front()->chunk_size();
 }
 const size_t
-batch::min_chunksz() noexcept
+batch::min_chunksz() const noexcept
 {
   return this->static_bins_.back()->chunk_size();
 }
 
 std::string_view
-batch::mmgr_name() noexcept
+batch::mmgr_name() const noexcept
 {
   return this->memmgr_name_;
 }
 
 const size_t
-batch::id() noexcept
+batch::id() const noexcept
 {
   return this->id_;
 }
 
 const size_t
-batch::total_bytes() noexcept
+batch::total_bytes() const noexcept
 {
   return this->total_bytes_;
 }

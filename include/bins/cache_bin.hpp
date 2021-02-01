@@ -14,6 +14,7 @@
 #include <spdlog/spdlog.h>
 #include <utility>
 
+#include "error_condition.hpp"
 #include "segment.hpp"
 
 namespace shm_kernel::memory_manager {
@@ -39,17 +40,20 @@ public:
 
   void set_logger(std::shared_ptr<spdlog::logger>);
 
-  std::shared_ptr<cache_segment> store(const void*  buffer,
-                                       const size_t size) noexcept;
+  std::shared_ptr<cache_segment> store(const void*      buffer,
+                                       const size_t     size,
+                                       std::error_code& ec) noexcept;
 
-  void* retrieve(const size_t segment_id) noexcept;
+  void* retrieve(const size_t segment_id, std::error_code& ec) noexcept;
 
-  int free(std::shared_ptr<cache_segment> segment) noexcept;
+  int free(std::shared_ptr<cache_segment> segment,
+           std::error_code&               ec) noexcept;
 
-  int set(const size_t segment_id,
-          const size_t origin_size,
-          const void*  new_buffer,
-          const size_t new_size) noexcept;
+  int set(const size_t     segment_id,
+          const size_t     origin_size,
+          const void*      new_buffer,
+          const size_t     new_size,
+          std::error_code& ec) noexcept;
 
   void clear() noexcept;
 

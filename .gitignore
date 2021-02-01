@@ -3,3 +3,5 @@
 **/.vs
 **/out 
 **/CMakeLists.txt.user
+**/.idea
+**/cmake-build*

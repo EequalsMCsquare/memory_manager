@@ -3,6 +3,7 @@
 #include "bins/instant_bin.hpp"
 #include "bins/static_bin.hpp"
 #include "config.hpp"
+#include "error_condition.hpp"
 #include "segment.hpp"
 
 #include <atomic>
@@ -83,7 +84,8 @@ public:
    * @param nbytes
    * @return std::shared_ptr<base_segment>
    */
-  std::shared_ptr<static_segment> allocate(const size_t nbytes);
+  std::shared_ptr<static_segment> allocate(const size_t     nbytes,
+                                           std::error_code& ec) noexcept;
 
   /**
    * @brief deallocate a shared memory segment
@@ -91,13 +93,14 @@ public:
    * @param segment
    * @return int
    */
-  int deallocate(std::shared_ptr<static_segment> segment) noexcept;
+  int deallocate(std::shared_ptr<static_segment> segment,
+                 std::error_code&                ec) noexcept;
 
-  std::string_view mmgr_name() noexcept;
-  const size_t     id() noexcept;
-  const size_t     max_chunksz() noexcept;
-  const size_t     min_chunksz() noexcept;
-  const size_t     total_bytes() noexcept;
+  std::string_view mmgr_name() const noexcept;
+  const size_t     id() const noexcept;
+  const size_t     max_chunksz() const noexcept;
+  const size_t     min_chunksz() const noexcept;
+  const size_t     total_bytes() const noexcept;
 };
 
 }

@@ -39,11 +39,15 @@ cache_bin::set_logger(std::shared_ptr<spdlog::logger> logger)
 }
 
 std::shared_ptr<cache_segment>
-cache_bin::store(const void* buffer, const size_t size) noexcept
+cache_bin::store(const void*      buffer,
+                 const size_t     size,
+                 std::error_code& ec) noexcept
 {
+  ec.clear();
   // check buffer
   if (buffer == nullptr) {
     _M_cachbin_logger->error("Buffer的指针不能为空指针!");
+    ec = MmgrErrc::NullptrBuffer;
     return nullptr;
   }
   const size_t __tmp_id = this->segment_counter_ref_++;
@@ -53,6 +57,7 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
   if (__alloc_buff == nullptr) {
+    ec = MmgrErrc::NoMemory;
     _M_cachbin_logger->error("分配{} bytes时失败!可能是内存不足", size);
     return nullptr;
   }
@@ -67,25 +72,30 @@ cache_bin::store(const void* buffer, const size_t size) noexcept
 }
 
 void*
-cache_bin::retrieve(const size_t segment_id) noexcept
+cache_bin::retrieve(const size_t segment_id, std::error_code& ec) noexcept
 {
+  ec.clear();
   // try to find the segment
   std::lock_guard __G(this->mtx_);
   if (auto __iter = this->data_map_.find(segment_id);
       __iter != this->data_map_.end()) {
     return __iter->second;
   }
+  ec = MmgrErrc::SegmentNotFound;
   return nullptr;
 }
 
 int
-cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
+cache_bin::free(std::shared_ptr<cache_segment> segment,
+                std::error_code&               ec) noexcept
 {
+  ec.clear();
   // find ptr by segment->id_
   auto __iter = this->data_map_.find(segment->id);
   if (__iter == this->data_map_.end()) {
     _M_cachbin_logger->error(
       "没有在当前Cache bin中找到这个segment! segment id: {}", segment->id);
+    ec = MmgrErrc::SegmentNotFound;
     return -1;
   }
   auto __pair = __iter->second;
@@ -97,14 +107,17 @@ cache_bin::free(std::shared_ptr<cache_segment> segment) noexcept
 }
 
 int
-cache_bin::set(const size_t segment_id,
-               const size_t origin_size,
-               const void*  new_buffer,
-               const size_t new_size) noexcept
+cache_bin::set(const size_t     segment_id,
+               const size_t     origin_size,
+               const void*      new_buffer,
+               const size_t     new_size,
+               std::error_code& ec) noexcept
 {
+  ec.clear();
   std::lock_guard<std::mutex> __lock(mtx_);
   auto                        __iter = this->data_map_.find(segment_id);
   if (__iter == this->data_map_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
     return -1;
   } else {
     this->pmr_pool_.deallocate(__iter->second, origin_size);

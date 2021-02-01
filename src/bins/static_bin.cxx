@@ -63,8 +63,9 @@ static_bin::first_fit(const size_t& chunks_req) noexcept
 }
 
 std::shared_ptr<static_segment>
-static_bin::malloc(const size_t nbytes) noexcept
+static_bin::malloc(const size_t nbytes, std::error_code& ec) noexcept
 {
+  ec.clear();
   size_t __segment_id = this->segment_counter_ref_++;
   // lock
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGG(this->mtx_);
@@ -74,11 +75,13 @@ static_bin::malloc(const size_t nbytes) noexcept
   // insufficient memory in this bin
   if (__chunkreq > this->chunk_left()) {
     _M_statbin_logger->error("当前Static Bin的内存不足以分配!");
+    ec = MmgrErrc::NoMemory;
     return nullptr;
   }
 
   auto __iter = this->first_fit(__chunkreq);
   if (__iter == chunks_.end()) {
+    ec = MmgrErrc::NoMemory;
     _M_statbin_logger->error("当前Static Bin的内存不足以分配!");
     return nullptr;
   }
@@ -102,13 +105,16 @@ static_bin::malloc(const size_t nbytes) noexcept
 }
 
 int
-static_bin::free(std::shared_ptr<static_segment> segment) noexcept
+static_bin::free(std::shared_ptr<static_segment> segment, std::error_code& ec) noexcept
 {
+  ec.clear();
   if (segment == nullptr) {
+    ec = MmgrErrc::NullptrSegment;
     return -1;
   }
   // check if the segment is malloc in this bin
   if (segment->bin_id != this->id()) {
+    ec = MmgrErrc::BinUnmatched;
     return -1;
   }
   auto __ptr  = segment->addr_pshift - this->base_pshift();
@@ -118,12 +124,14 @@ static_bin::free(std::shared_ptr<static_segment> segment) noexcept
 
   // check ptr is in legal range
   if (__ptr_chunks > this->chunk_count()) {
+    ec = MmgrErrc::IllegalSegmentRange;
     return -1;
   }
 
   auto __chunks = this->chunk_req(__size);
   // check segment is in legal range
   if (__ptr_chunks + __chunks > this->chunk_count()) {
+    ec = MmgrErrc::IllegalSegmentRange;
     return -1;
   }
   // lock
@@ -137,6 +145,7 @@ static_bin::free(std::shared_ptr<static_segment> segment) noexcept
   // check if the chunks are already marked as available.
   for (auto __iter = __start_chunk; __iter != __end_chunk; __iter++) {
     if (*__iter == true) {
+      ec = MmgrErrc::SegmentDoubleFree;
       return -1;
     }
   }
@@ -157,35 +166,35 @@ static_bin::clear() noexcept
   this->chunk_left_ = this->chunk_count();
 }
 
-const size_t
-static_bin::chunk_req(const size_t& nbytes) noexcept
+size_t
+static_bin::chunk_req(const size_t& nbytes) const noexcept
 {
   return nbytes % chunk_size() == 0 ? nbytes / chunk_size()
                                     : nbytes / chunk_size() + 1;
 }
 
 const size_t
-static_bin::id() noexcept
+static_bin::id() const noexcept
 {
   return this->id_;
 }
 const size_t
-static_bin::base_pshift() noexcept
+static_bin::base_pshift() const noexcept
 {
   return this->base_pshift_;
 }
 const size_t
-static_bin::chunk_size() noexcept
+static_bin::chunk_size() const noexcept
 {
   return this->chunk_size_;
 }
 const size_t
-static_bin::chunk_count() noexcept
+static_bin::chunk_count() const noexcept
 {
   return this->chunk_count_;
 }
 const size_t
-static_bin::chunk_left() noexcept
+static_bin::chunk_left() const noexcept
 {
   return this->chunk_left_;
 }

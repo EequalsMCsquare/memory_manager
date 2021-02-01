@@ -31,9 +31,9 @@ public:
 
   instant_bin(const instant_bin&) = delete;
 
-  std::shared_ptr<instant_segment> malloc(const size_t nbytes) noexcept;
+  std::shared_ptr<instant_segment> malloc(const size_t nbytes, std::error_code &ec) noexcept;
 
-  int free(std::shared_ptr<instant_segment> segment) noexcept;
+  int free(std::shared_ptr<instant_segment> segment, std::error_code& ec) noexcept;
 
   void clear() noexcept;
 
@@ -42,6 +42,6 @@ public:
   const size_t size() noexcept;
 
   std::shared_ptr<shared_memory::shm_handle> get_shmhdl(
-    const size_t& seg_id) noexcept;
+    const size_t& seg_id, std::error_code& ec) noexcept;
 };
 }

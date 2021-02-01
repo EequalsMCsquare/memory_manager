@@ -1,11 +1,12 @@
 #include "mmgr.hpp"
 #include "bins/cache_bin.hpp"
 #include "bins/instant_bin.hpp"
+#include "error_condition.hpp"
+#include "except.hpp"
 #include "segment.hpp"
 #include <memory>
 #include <mutex>
 #include <spdlog/spdlog.h>
-#include <stdexcept>
 #include <utility>
 
 namespace shm_kernel::memory_manager {
@@ -72,83 +73,135 @@ mmgr::add_BATCH()
 }
 
 std::shared_ptr<cache_segment>
-mmgr::cachbin_STORE(const void* buffer, const size_t size) noexcept
+mmgr::cachbin_STORE(const void*      buffer,
+                    const size_t     size,
+                    std::error_code& ec) noexcept
 {
   if (buffer == nullptr) {
     _M_mmgr_logger->error("Buffer 不能为空指针!");
     return nullptr;
   }
-  auto __seg       = this->cache_bin_->store(buffer, size);
+  auto __seg       = this->cache_bin_->store(buffer, size, ec);
   __seg->mmgr_name = this->name();
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
     _M_mmgr_logger->error("无法将Segment添加进Table!");
-    this->cache_bin_->free(__seg);
+    this->cache_bin_->free(__seg, ec);
     return nullptr;
+  }
+  return __seg;
+}
+std::shared_ptr<cache_segment>
+mmgr::cachbin_STORE(const void* buffer, const size_t size)
+{
+  std::error_code ec;
+  auto            __seg = this->cachbin_STORE(buffer, size, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
   }
   return __seg;
 }
 
 int
-mmgr::cachbin_SET(const size_t segment_id,
-                  const void*  buffer,
-                  const size_t size) noexcept
+mmgr::cachbin_SET(const size_t     segment_id,
+                  const void*      buffer,
+                  const size_t     size,
+                  std::error_code& ec) noexcept
 {
   std::lock_guard<std::mutex> __lock(this->mtx_);
   auto                        __iter = this->segment_table_.find(segment_id);
   if (__iter != this->segment_table_.end()) {
     int rv =
-      this->cache_bin_->set(segment_id, __iter->second->size, buffer, size);
+      this->cache_bin_->set(segment_id, __iter->second->size, buffer, size, ec);
     if (rv == 0) {
       return 0;
     } else {
-      _M_mmgr_logger->error("Segment修改失败!");
+      _M_mmgr_logger->error(
+        "Segment修改失败! ({}) {}", ec.value(), ec.message());
+
       return -1;
     }
   } else {
+    ec = MmgrErrc::SegmentNotFound;
     _M_mmgr_logger->error("没有找到Segment {}", segment_id);
     return -1;
   }
 }
+int
+mmgr::cachbin_SET(const size_t segment_id,
+                  const void*  buffer,
+                  const size_t size)
+{
+  std::error_code ec;
+  this->cachbin_SET(segment_id, buffer, size, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return 0;
+}
 
 void*
-mmgr::cachbin_RETRIEVE(const size_t segment_id) noexcept
+mmgr::cachbin_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept
 {
   auto __iter = this->segment_table_.find(segment_id);
   if (__iter == this->segment_table_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
     _M_mmgr_logger->error("没有找到Segment {}", segment_id);
     return nullptr;
   }
-  auto __buff = this->cache_bin_->retrieve(segment_id);
+  auto __buff = this->cache_bin_->retrieve(segment_id, ec);
   if (__buff == nullptr) {
     _M_mmgr_logger->error("segment {} 不是一个Cache Segment!", segment_id);
+    ec = MmgrErrc::SegmentTypeUnmatched;
     return nullptr;
   }
   return __buff;
 }
 
-std::shared_ptr<instant_segment>
-mmgr::instbin_ALLOC(const size_t size) noexcept
+void*
+mmgr::cachbin_RETRIEVE(const size_t segment_id)
 {
-  auto __seg       = this->instant_bin_->malloc(size);
+  std::error_code ec;
+  void*           __ptr = this->cachbin_RETRIEVE(segment_id, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return __ptr;
+}
+std::shared_ptr<instant_segment>
+mmgr::instbin_ALLOC(const size_t size, std::error_code& ec) noexcept
+{
+  ec.clear();
+  auto __seg       = this->instant_bin_->malloc(size, ec);
   __seg->mmgr_name = this->name();
   auto __iter_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__iter_rv.second) {
     _M_mmgr_logger->error("无法将Segment添加进Table!");
-    this->instant_bin_->free(__seg);
+    this->instant_bin_->free(__seg, ec);
     return nullptr;
+  }
+  return __seg;
+}
+std::shared_ptr<instant_segment>
+mmgr::instbin_ALLOC(const size_t size)
+{
+  std::error_code ec;
+  auto            __seg = this->instbin_ALLOC(size, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
   }
   return __seg;
 }
 
 std::shared_ptr<static_segment>
-mmgr::statbin_ALLOC(const size_t size) noexcept
+mmgr::statbin_ALLOC(const size_t size, std::error_code& ec) noexcept
 {
+  ec.clear();
   std::shared_ptr<static_segment> __seg;
   for (const auto& batch : batches_) {
-    __seg = batch->allocate(size);
+    __seg = batch->allocate(size, ec);
     if (__seg) {
       // if allocate success, break loop
       break;
@@ -157,7 +210,7 @@ mmgr::statbin_ALLOC(const size_t size) noexcept
   // all of batches can't meet the requirement, add a new batch
   if (!__seg) {
     auto __new_batch = this->add_BATCH();
-    __seg            = __new_batch->allocate(size);
+    __seg            = __new_batch->allocate(size, ec);
     // if still fail
     if (!__seg) {
       _M_mmgr_logger->error("新增的Batch也无法分配空间, 真奇怪...");
@@ -168,22 +221,33 @@ mmgr::statbin_ALLOC(const size_t size) noexcept
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
-    this->batches_[__seg->batch_id]->deallocate(__seg);
+    this->batches_[__seg->batch_id]->deallocate(__seg, ec);
     _M_mmgr_logger->error("无法将Segment添加进Table.");
+    ec = MmgrErrc::UnableToRegisterSegment;
     return nullptr;
   }
   return __seg;
+}
 
-  // will never reach this step.
-  return nullptr;
+std::shared_ptr<static_segment>
+mmgr::statbin_ALLOC(const size_t size)
+{
+  std::error_code ec;
+  auto            __seg = this->statbin_ALLOC(size, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return __seg;
 }
 
 int
-mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
+mmgr::instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 {
+  ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
   if (__iter == this->segment_table_.end()) {
     _M_mmgr_logger->error("没有找到Segment");
+    ec = MmgrErrc::SegmentNotFound;
     return -1;
   }
   // if found  cehck if segment is instant segment
@@ -191,12 +255,13 @@ mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::instant_segment",
       segment_id);
+    ec = MmgrErrc::SegmentTypeUnmatched;
     return -1;
   }
   // cast to instant segment
   auto __seg = std::dynamic_pointer_cast<instant_segment>(__iter->second);
   // free
-  int rv = this->instant_bin_->free(__seg);
+  int rv = this->instant_bin_->free(__seg, ec);
   if (rv == 0) {
     this->segment_table_.erase(__iter);
     return 0;
@@ -206,24 +271,37 @@ mmgr::instbin_DEALLOC(const size_t segment_id) noexcept
 }
 
 int
-mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
+mmgr::instbin_DEALLOC(const size_t segment_id)
 {
+  std::error_code ec;
+  this->instbin_DEALLOC(segment_id, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return 0;
+}
+int
+mmgr::statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
+{
+  ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
   if (__iter == this->segment_table_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
     _M_mmgr_logger->error("没有找到Segment");
     return -1;
   }
-  // if found  cehck if segment is static segment
+  // if found, check if segment is static segment
   if (__iter->second->type != SEG_TYPE::statbin_segment) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::static_segment",
       segment_id);
+    ec = MmgrErrc::SegmentTypeUnmatched;
     return -1;
   }
   // cast to static segment
   auto __seg = std::dynamic_pointer_cast<static_segment>(__iter->second);
   // free
-  int rv = this->batches_[__seg->batch_id]->deallocate(__seg);
+  int rv = this->batches_[__seg->batch_id]->deallocate(__seg, ec);
   if (rv == 0) {
     this->segment_table_.erase(__iter);
     return 0;
@@ -234,15 +312,29 @@ mmgr::statbin_DEALLOC(const size_t segment_id) noexcept
 }
 
 int
-mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
+mmgr::statbin_DEALLOC(const size_t segment_id)
 {
+  std::error_code ec;
+  this->statbin_DEALLOC(segment_id, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return 0;
+}
+
+int
+mmgr::cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
+{
+  ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
   if (__iter == this->segment_table_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
     _M_mmgr_logger->error("没有找到Segment");
     return -1;
   }
-  // if found  cehck if segment is cache segment
+  // if found, check if segment is cache segment
   if (__iter->second->type != SEG_TYPE::cachbin_segment) {
+    ec = MmgrErrc::SegmentTypeUnmatched;
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::cache_segment",
       segment_id);
@@ -251,7 +343,7 @@ mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
   // cast to cache segment
   auto __seg = std::dynamic_pointer_cast<cache_segment>(__iter->second);
   // free
-  int rv = this->cache_bin_->free(__seg);
+  int rv = this->cache_bin_->free(__seg, ec);
   if (rv == 0) {
     this->segment_table_.erase(__iter);
     return 0;
@@ -260,21 +352,43 @@ mmgr::cachbin_DEALLOC(const size_t segment_id) noexcept
   _M_mmgr_logger->error("Segment dealloc失败!");
   return -1;
 }
+int
+mmgr::cachbin_DEALLOC(const size_t segment_id)
+{
+  std::error_code ec;
+  this->cachbin_DEALLOC(segment_id, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return 0;
+}
+
+std::shared_ptr<base_segment>
+mmgr::get_segment(const size_t segment_id, std::error_code& ec) noexcept
+{
+  auto __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
+    return {};
+  }
+  return __iter->second;
+}
+
+std::shared_ptr<base_segment>
+mmgr::get_segment(const size_t segment_id)
+{
+  std::error_code ec;
+  auto            __seg = this->get_segment(segment_id, ec);
+  if (ec) {
+    throw MmgrExcept(ec);
+  }
+  return 0;
+}
 
 void
 mmgr::set_logger(std::shared_ptr<spdlog::logger> logger)
 {
   this->_M_mmgr_logger = logger;
-}
-
-std::shared_ptr<base_segment>
-mmgr::get_segment(const size_t segment_id) noexcept
-{
-  auto __iter = this->segment_table_.find(segment_id);
-  if (__iter == this->segment_table_.end()) {
-    return {};
-  }
-  return __iter->second;
 }
 
 std::string_view
