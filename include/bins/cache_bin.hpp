@@ -44,10 +44,20 @@ public:
                                        const size_t     size,
                                        std::error_code& ec) noexcept;
 
+  std::shared_ptr<cache_segment> malloc(const size_t     size,
+                                        void**           ptr,
+                                        std::error_code& ec) noexcept;
+
   void* retrieve(const size_t segment_id, std::error_code& ec) noexcept;
 
   int free(std::shared_ptr<cache_segment> segment,
            std::error_code&               ec) noexcept;
+
+  int free(std::shared_ptr<cache_segment> segment);
+
+  void* realloc(std::shared_ptr<cache_segment> segment,
+                const size_t                   new_size,
+                std::error_code&               ec) noexcept;
 
   int set(const size_t     segment_id,
           const size_t     origin_size,

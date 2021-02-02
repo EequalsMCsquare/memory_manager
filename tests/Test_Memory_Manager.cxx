@@ -480,6 +480,62 @@ SCENARIO("allocate with mmgr", "[mmgr]")
         }
       }
     }
+    WHEN("store long with cache bin using callback function")
+    {
+      double num   = 3.14;
+      auto   __seg = pool.cachbin_STORE(
+        sizeof(double),
+        [num](void* buffer) { *(static_cast<double*>(buffer)) = num; },
+        ec);
+      REQUIRE(__seg != nullptr);
+      REQUIRE(__seg->id == 0);
+      REQUIRE(__seg->size == 8);
+      REQUIRE(__seg->mmgr_name.compare("test") == 0);
+      THEN("segment_table should change")
+      {
+        REQUIRE(pool.segment_count() == 1);
+      }
+      AND_WHEN("retrive the segment")
+      {
+        double* __buff =
+          static_cast<double*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+        REQUIRE(__buff != nullptr);
+        REQUIRE(*__buff == num);
+      }
+      AND_WHEN("dealloc the segment")
+      {
+        pool.cachbin_DEALLOC(__seg->id, ec);
+        THEN("segment count should be 0")
+        {
+          REQUIRE(pool.segment_count() == 0);
+        }
+      }
+      AND_WHEN("set a segment with callback")
+      {
+        GIVEN("a new number")
+        {
+          float new_num = 6.2831852;
+          THEN("modify the value")
+          {
+            int rv = pool.cachbin_SET(
+              __seg->id,
+              sizeof(float),
+              [new_num](void* buffer) {
+                *(static_cast<float*>(buffer)) = new_num;
+              },
+              ec);
+            REQUIRE(rv == 0);
+            AND_THEN("retrive the new data")
+            {
+              float* __new_buff =
+                static_cast<float*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+              REQUIRE(__new_buff != nullptr);
+              REQUIRE(*__new_buff == new_num);
+            }
+          }
+        }
+      }
+    }
 
     WHEN("alloc with static bin")
     {

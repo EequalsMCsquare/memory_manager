@@ -1,4 +1,5 @@
 #include "bins/cache_bin.hpp"
+#include "error_condition.hpp"
 #include "segment.hpp"
 #include <chrono>
 #include <condition_variable>
@@ -15,6 +16,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <thread>
+#include <utility>
 
 namespace shm_kernel::memory_manager {
 
@@ -85,6 +87,23 @@ cache_bin::retrieve(const size_t segment_id, std::error_code& ec) noexcept
   return nullptr;
 }
 
+std::shared_ptr<cache_segment>
+cache_bin::malloc(const size_t size, void** ptr, std::error_code& ec) noexcept
+{
+  ec.clear();
+  void* __buff = this->pmr_pool_.allocate(size);
+  if (__buff == nullptr) {
+    ec = MmgrErrc::NoMemory;
+    return nullptr;
+  }
+  size_t __tmp_id = this->segment_counter_ref_++;
+  this->data_map_.insert(std::make_pair(__tmp_id, __buff));
+  auto __seg =
+    std::make_shared<cache_segment>(this->mmgr_name_, __tmp_id, size);
+  *ptr = __buff;
+  return __seg;
+}
+
 int
 cache_bin::free(std::shared_ptr<cache_segment> segment,
                 std::error_code&               ec) noexcept
@@ -103,6 +122,14 @@ cache_bin::free(std::shared_ptr<cache_segment> segment,
   this->pmr_pool_.deallocate(__iter->second, segment->size);
   // erase
   this->data_map_.erase(__iter);
+  return 0;
+}
+
+int
+cache_bin::free(std::shared_ptr<cache_segment> segment)
+{
+  std::error_code ec;
+  this->free(segment, ec);
   return 0;
 }
 
@@ -126,6 +153,35 @@ cache_bin::set(const size_t     segment_id,
     __iter->second = __new_addr;
     return 0;
   }
+}
+
+void*
+cache_bin::realloc(std::shared_ptr<cache_segment> segment,
+                   const size_t                   new_size,
+                   std::error_code&               ec) noexcept
+{
+  if (segment->type != SEG_TYPE::cachbin_segment) {
+    ec = MmgrErrc::SegmentTypeUnmatched;
+    return nullptr;
+  }
+  // find ptr
+  void* __ptr = this->data_map_[segment->id];
+  if (__ptr == nullptr) {
+    _M_cachbin_logger->error("Segment的buffer是nullptr!");
+    ec = MmgrErrc::NullptrSegment;
+    return nullptr;
+  }
+  // dealloc it
+  this->pmr_pool_.deallocate(__ptr, segment->size);
+  void* __new_ptr = this->pmr_pool_.allocate(new_size);
+  if (__new_ptr == nullptr) {
+    this->_M_cachbin_logger->error("pmr_pool 分配内存失败!");
+    ec = MmgrErrc::NoMemory;
+    return nullptr;
+  }
+  this->data_map_[segment->id] = __new_ptr;
+  segment->size                = new_size;
+  return __new_ptr;
 }
 
 void

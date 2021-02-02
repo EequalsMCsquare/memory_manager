@@ -103,6 +103,57 @@ mmgr::cachbin_STORE(const void* buffer, const size_t size)
   return __seg;
 }
 
+std::shared_ptr<cache_segment>
+mmgr::cachbin_STORE(const size_t                      size,
+                    std::function<void(void* buffer)> callback,
+                    std::error_code&                  ec) noexcept
+{
+  ec.clear();
+  void* __alloc_buffer;
+  auto  __seg = this->cache_bin_->malloc(size, &__alloc_buffer, ec);
+  if (ec) {
+    return nullptr;
+  }
+  auto __insert_rv =
+    this->segment_table_.insert(std::make_pair(__seg->id, __seg));
+  if (!__insert_rv.second) {
+    this->_M_mmgr_logger->error("无法将Segment添加进Table");
+    ec = MmgrErrc::UnableToRegisterSegment;
+    this->cache_bin_->free(__seg);
+  }
+  callback(__alloc_buffer);
+  return __seg;
+}
+
+int
+mmgr::cachbin_SET(const size_t                      segment_id,
+                  const size_t                      size,
+                  std::function<void(void* buffer)> callback,
+                  std::error_code&                  ec) noexcept
+{
+  ec.clear();
+  std::lock_guard<std::mutex> __lock(this->mtx_);
+  auto                        __iter = this->segment_table_.find(segment_id);
+  if (__iter == this->segment_table_.end()) {
+    ec = MmgrErrc::SegmentNotFound;
+    _M_mmgr_logger->error("没有找到Segment_{}", segment_id);
+    return -1;
+  }
+  // cast
+  auto __seg = std::dynamic_pointer_cast<cache_segment>(__iter->second);
+  if (__seg == nullptr) {
+    _M_mmgr_logger->error("无法将Segment_{}转换为 cache_segment!", segment_id);
+    ec = MmgrErrc::SegmentTypeUnmatched;
+    return -1;
+  }
+  void* __new_buffer = this->cache_bin_->realloc(__seg, size, ec);
+  if (__new_buffer == nullptr) {
+    return -1;
+  }
+  callback(__new_buffer);
+  return 0;
+}
+
 int
 mmgr::cachbin_SET(const size_t     segment_id,
                   const void*      buffer,
