@@ -10,9 +10,9 @@ struct segmentdesc;
 
 enum class SEG_TYPE
 {
-  statbin_segment = 1,
-  cachbin_segment = 2,
-  instbin_segment = 3,
+  STATIC_SEGMENT  = 1,
+  CACHE_SEGMENT   = 2,
+  INSTANT_SEGMENT = 3,
 };
 
 struct base_segment
@@ -85,6 +85,7 @@ struct segmentdesc
   void init_with_static(const static_segment&);
   void init_with_instant(const instant_segment&);
   segmentdesc() = default;
+  segmentdesc(const segmentdesc&);
   segmentdesc(base_segment&&);
   segmentdesc(const cache_segment&);
   segmentdesc(std::shared_ptr<cache_segment>);
