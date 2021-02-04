@@ -81,8 +81,7 @@ mmgr::cachbin_STORE(const void*      buffer,
     _M_mmgr_logger->error("Buffer 不能为空指针!");
     return nullptr;
   }
-  auto __seg       = this->cache_bin_->store(buffer, size, ec);
-  __seg->mmgr_name = this->name();
+  auto __seg = this->cache_bin_->store(buffer, size, ec);
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
@@ -224,8 +223,7 @@ std::shared_ptr<instant_segment>
 mmgr::instbin_ALLOC(const size_t size, std::error_code& ec) noexcept
 {
   ec.clear();
-  auto __seg       = this->instant_bin_->malloc(size, ec);
-  __seg->mmgr_name = this->name();
+  auto __seg = this->instant_bin_->malloc(size, ec);
   auto __iter_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__iter_rv.second) {
@@ -268,7 +266,6 @@ mmgr::statbin_ALLOC(const size_t size, std::error_code& ec) noexcept
       return nullptr;
     }
   }
-  __seg->mmgr_name = this->name();
   auto __insert_rv =
     this->segment_table_.insert(std::make_pair(__seg->id, __seg));
   if (!__insert_rv.second) {
@@ -302,7 +299,7 @@ mmgr::instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
     return -1;
   }
   // if found  cehck if segment is instant segment
-  if (__iter->second->type != SEG_TYPE::instbin_segment) {
+  if (__iter->second->type != SEG_TYPE::INSTANT_SEGMENT) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::instant_segment",
       segment_id);
@@ -342,7 +339,7 @@ mmgr::statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
     return -1;
   }
   // if found, check if segment is static segment
-  if (__iter->second->type != SEG_TYPE::statbin_segment) {
+  if (__iter->second->type != SEG_TYPE::STATIC_SEGMENT) {
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::static_segment",
       segment_id);
@@ -384,7 +381,7 @@ mmgr::cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
     return -1;
   }
   // if found, check if segment is cache segment
-  if (__iter->second->type != SEG_TYPE::cachbin_segment) {
+  if (__iter->second->type != SEG_TYPE::CACHE_SEGMENT) {
     ec = MmgrErrc::SegmentTypeUnmatched;
     _M_mmgr_logger->error(
       "Segment_{}不是一个shm_kernel::memory_manager::cache_segment",
