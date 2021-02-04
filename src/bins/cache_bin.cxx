@@ -53,8 +53,7 @@ cache_bin::store(const void*      buffer,
     return nullptr;
   }
   const size_t __tmp_id = this->segment_counter_ref_++;
-  auto         __seg =
-    std::make_shared<cache_segment>(this->mmgr_name_, __tmp_id, size);
+  auto __seg = std::make_shared<cache_segment>(mmgr_name_, __tmp_id, size);
 
   void* __alloc_buff = this->pmr_pool_.allocate(size);
   // check if allocate success
@@ -98,9 +97,8 @@ cache_bin::malloc(const size_t size, void** ptr, std::error_code& ec) noexcept
   }
   size_t __tmp_id = this->segment_counter_ref_++;
   this->data_map_.insert(std::make_pair(__tmp_id, __buff));
-  auto __seg =
-    std::make_shared<cache_segment>(this->mmgr_name_, __tmp_id, size);
-  *ptr = __buff;
+  auto __seg = std::make_shared<cache_segment>(mmgr_name_, __tmp_id, size);
+  *ptr       = __buff;
   return __seg;
 }
 
@@ -160,12 +158,13 @@ cache_bin::realloc(std::shared_ptr<cache_segment> segment,
                    const size_t                   new_size,
                    std::error_code&               ec) noexcept
 {
-  if (segment->type != SEG_TYPE::cachbin_segment) {
+  if (segment->type != SEG_TYPE::CACHE_SEGMENT) {
     ec = MmgrErrc::SegmentTypeUnmatched;
     return nullptr;
   }
   // find ptr
-  void* __ptr = this->data_map_[segment->id];
+  std::lock_guard<std::mutex> __lock(this->mtx_);
+  void*                       __ptr = this->data_map_[segment->id];
   if (__ptr == nullptr) {
     _M_cachbin_logger->error("Segment的buffer是nullptr!");
     ec = MmgrErrc::NullptrSegment;

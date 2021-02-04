@@ -560,7 +560,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
     WHEN("alloc with instant bin")
     {
       auto __seg = pool.instbin_ALLOC(32_MB, ec);
-      REQUIRE(__seg->type == libmem::SEG_TYPE::instbin_segment);
+      REQUIRE(__seg->type == libmem::SEG_TYPE::INSTANT_SEGMENT);
       REQUIRE(__seg->mmgr_name.compare("test") == 0);
       REQUIRE(__seg->id == 0);
       REQUIRE(__seg->size >= 32_MB);

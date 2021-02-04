@@ -17,7 +17,7 @@ class instant_bin
 protected:
   std::atomic_size_t& segment_counter_ref_;
   std::mutex          mtx_;
-  std::string_view    memmgr_name_;
+  std::string_view    mmgr_name_;
   std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
   std::shared_ptr<spdlog::logger>                           _M_instbin_logger;
 
@@ -31,9 +31,11 @@ public:
 
   instant_bin(const instant_bin&) = delete;
 
-  std::shared_ptr<instant_segment> malloc(const size_t nbytes, std::error_code &ec) noexcept;
+  std::shared_ptr<instant_segment> malloc(const size_t     nbytes,
+                                          std::error_code& ec) noexcept;
 
-  int free(std::shared_ptr<instant_segment> segment, std::error_code& ec) noexcept;
+  int free(std::shared_ptr<instant_segment> segment,
+           std::error_code&                 ec) noexcept;
 
   void clear() noexcept;
 
@@ -42,6 +44,7 @@ public:
   const size_t size() noexcept;
 
   std::shared_ptr<shared_memory::shm_handle> get_shmhdl(
-    const size_t& seg_id, std::error_code& ec) noexcept;
+    const size_t&    seg_id,
+    std::error_code& ec) noexcept;
 };
 }

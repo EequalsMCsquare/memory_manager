@@ -21,12 +21,12 @@ batch::batch(std::string_view                arena_name,
              const size_t&                   id,
              std::atomic_size_t&             segment_counter,
              std::shared_ptr<spdlog::logger> logger)
-  : memmgr_name_(arena_name)
+  : mmgr_name_(arena_name)
   , id_(id)
   , segment_counter_ref_(segment_counter)
   , _M_batch_logger(logger)
 {
-  logger->trace("initializing {}/batch{}", memmgr_name_, id_);
+  logger->trace("initializing {}/batch{}", mmgr_name_, id_);
 }
 
 batch::batch(std::string_view                memmgr_name,
@@ -55,7 +55,7 @@ batch::batch(std::string_view                memmgr_name,
   }
 
   this->init_shm(this->init_static_bins(statbin_chunksz, statbin_chunkcnt));
-  logger->trace("{}/batch{} 初始化完毕!", memmgr_name_, id_);
+  logger->trace("{}/batch{} 初始化完毕!", mmgr_name_, id_);
 }
 
 batch::batch(std::string_view                arena_name,
@@ -94,7 +94,7 @@ batch::batch(std::string_view                arena_name,
 
   this->init_shm(this->init_static_bins(
     __chunksz, std::vector<size_t>(__bin_count, statbin_size)));
-  logger->trace("{}/batch{} 初始化完毕!", memmgr_name_, id_);
+  logger->trace("{}/batch{} 初始化完毕!", mmgr_name_, id_);
 }
 
 batch::batch(std::string_view                arena_name,
@@ -161,7 +161,7 @@ void
 batch::init_shm(const size_t& buffsz)
 {
   _M_batch_logger->trace("正在初始化shm_handle... size: {}KB", buffsz);
-  auto handle_name = fmt::format("{}#batch{}#statbin", memmgr_name_, id_);
+  auto handle_name = fmt::format("{}#batch{}#statbin", mmgr_name_, id_);
   try {
     this->handle_ =
       std::make_unique<shared_memory::shm_handle>(handle_name, buffsz);
@@ -280,7 +280,7 @@ batch::min_chunksz() const noexcept
 std::string_view
 batch::mmgr_name() const noexcept
 {
-  return this->memmgr_name_;
+  return this->mmgr_name_;
 }
 
 const size_t

@@ -22,7 +22,7 @@ class batch
   friend class fmt::formatter<batch>;
 
 protected:
-  std::string_view    memmgr_name_;
+  std::string_view    mmgr_name_;
   const size_t        id_;
   size_t              total_bytes_;
   std::atomic_size_t& segment_counter_ref_;

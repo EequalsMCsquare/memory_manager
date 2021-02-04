@@ -9,7 +9,7 @@ instant_bin::instant_bin(std::atomic_size_t&             segment_counter,
                          std::string_view                memmgr_name,
                          std::shared_ptr<spdlog::logger> logger)
   : segment_counter_ref_(segment_counter)
-  , memmgr_name_(memmgr_name)
+  , mmgr_name_(memmgr_name)
   , _M_instbin_logger(logger)
 {}
 
@@ -22,7 +22,7 @@ instant_bin::malloc(const size_t nbytes, std::error_code& ec) noexcept
   std::shared_ptr<shared_memory::shm_handle> __shm;
   try {
     __shm = std::make_shared<shared_memory::shm_handle>(
-      fmt::format("{}#instbin#seg{}", memmgr_name_, __tmp), nbytes);
+      fmt::format("{}#instbin#seg{}", mmgr_name_, __tmp), nbytes);
   } catch (const std::exception& e) {
     this->_M_instbin_logger->error(
       "创建instant segment的shm_handle失败！ ({}) {}",
@@ -37,11 +37,7 @@ instant_bin::malloc(const size_t nbytes, std::error_code& ec) noexcept
     return nullptr;
   }
 
-  auto __seg       = std::make_shared<instant_segment>();
-  __seg->mmgr_name = this->memmgr_name_;
-  __seg->id        = __tmp;
-  __seg->size      = nbytes;
-
+  auto __seg = std::make_shared<instant_segment>(mmgr_name_, __tmp, nbytes);
   return __seg;
 }
 
@@ -50,11 +46,6 @@ instant_bin::free(std::shared_ptr<instant_segment> segment,
                   std::error_code&                 ec) noexcept
 {
   ec.clear();
-  if (segment->mmgr_name != this->memmgr_name_) {
-    _M_instbin_logger->error("Segment 的memmgr名字与当前Instant Bin的不一致!");
-    ec = MmgrErrc::MmgrNameUnmatch;
-    return -1;
-  }
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG(mtx_);
 
   // search for segment's shm_handler
