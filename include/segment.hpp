@@ -67,6 +67,7 @@ class segment_info
   friend class static_segment;
   friend class cache_segment;
   friend class instant_segment;
+  friend class smgr;
 
 private:
   char     mmgr_name_[128];
@@ -76,7 +77,7 @@ private:
   union
   {
     size_t addr_pshift_;
-    void*  cache_buffer_;
+    void*  local_buffer_;
   };
   size_t batch_id_;
   size_t bin_id_;
@@ -106,11 +107,10 @@ public:
   // instant segment constructor
   segment_info(std::shared_ptr<instant_segment>);
 
-  std::string_view            mmgr_name() const noexcept;
-  size_t                      id() const noexcept;
-  size_t                      size() const noexcept;
-  SEG_TYPE                    type() const noexcept;
-  std::variant<size_t, void*> ptr() const noexcept;
+  std::string_view mmgr_name() const noexcept;
+  size_t           id() const noexcept;
+  size_t           size() const noexcept;
+  SEG_TYPE         type() const noexcept;
+  std::string      shm_name() const noexcept;
 };
-
 }

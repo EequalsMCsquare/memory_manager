@@ -21,7 +21,8 @@ enum class MmgrErrc
   TooBigForStaticBin,
   NoSuitableStaticBin,
   UnableToRegisterSegment,
-
+  UnableToAttachShm,
+  SegmentExist,
 };
 
 namespace std {

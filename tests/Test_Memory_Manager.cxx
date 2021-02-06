@@ -1,5 +1,7 @@
 #include "bins/cache_bin.hpp"
 #include "mmgr.hpp"
+#include "segment.hpp"
+#include "smgr.hpp"
 #include <array>
 #define CATCH_CONFIG_MAIN
 #include "batch.hpp"
@@ -575,4 +577,30 @@ SCENARIO("allocate with mmgr", "[mmgr]")
       }
     }
   }
+}
+
+TEST_CASE("smgr test", "[smgr]")
+{
+  std::error_code ec;
+  std::string     mmgr_name = "testcaseasdasd";
+  libmem::mmgr    mm(mmgr_name, { 128 }, { 100 });
+  libmem::smgr    sm(mmgr_name);
+
+  auto seg1 = mm.statbin_ALLOC(128);
+  REQUIRE(seg1->type == libmem::SEG_TYPE::STATIC_SEGMENT);
+  REQUIRE(seg1->size == 128);
+  auto mm_seg_info1 = seg1->to_seginfo();
+  REQUIRE(mm_seg_info1.size() == 128);
+  REQUIRE(mm_seg_info1.id() == seg1->id);
+
+  auto sm_seg_info1 = sm.register_segment(&mm_seg_info1, ec);
+  REQUIRE_FALSE(ec);
+
+  auto buffer1 = sm.bufferize(sm_seg_info1, ec);
+  REQUIRE_FALSE(ec);
+  REQUIRE(buffer1.first);
+  REQUIRE(buffer1.second == sm_seg_info1->size());
+
+  sm.unregister_segment(sm_seg_info1->id(), ec);
+  REQUIRE_FALSE(ec);
 }

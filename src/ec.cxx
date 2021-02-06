@@ -1,4 +1,4 @@
-#include "error_condition.hpp"
+#include "ec.hpp"
 
 struct MmgrErrorCategory : public std::error_category
 {
@@ -50,6 +50,10 @@ MmgrErrorCategory::message(int ev) const
       return "no available static bin!";
     case MmgrErrc::UnableToRegisterSegment:
       return "unable to insert segment into segment table!";
+    case MmgrErrc::UnableToAttachShm:
+      return "unable to attach to a shared memory object!";
+    case MmgrErrc::SegmentExist:
+      return "segment already exist!";
     default:
       return "unknown error";
   }
@@ -60,5 +64,5 @@ const MmgrErrorCategory TheMmgrErrorCategory{};
 std::error_code
 make_error_code(MmgrErrc ec)
 {
-  return {static_cast<int>(ec), TheMmgrErrorCategory };
+  return { static_cast<int>(ec), TheMmgrErrorCategory };
 }

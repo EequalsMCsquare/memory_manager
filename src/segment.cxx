@@ -54,6 +54,12 @@ segment_info::mmgr_name() const noexcept
 size_t
 segment_info::id() const noexcept
 {
+  return this->id_;
+}
+
+size_t
+segment_info::size() const noexcept
+{
   return this->size_;
 }
 SEG_TYPE
@@ -61,20 +67,25 @@ segment_info::type() const noexcept
 {
   return this->type_;
 }
-std::variant<size_t, void*>
-segment_info::ptr() const noexcept
-{
-  if (this->type_ == SEG_TYPE::CACHE_SEGMENT) {
-    return cache_buffer_;
-  } else {
-    return this->addr_pshift_;
-  }
-}
 
 void
 segment_info::set_ptr(void* const ptr) noexcept
 {
-  this->cache_buffer_ = ptr;
+  this->local_buffer_ = ptr;
+}
+std::string
+segment_info::shm_name() const noexcept
+{
+  // TODO:
+  switch (this->type_) {
+    case SEG_TYPE::CACHE_SEGMENT:
+      return "";
+    case SEG_TYPE::STATIC_SEGMENT:
+      return fmt::format("{}#batch{}#statbin", mmgr_name(), batch_id_);
+    case SEG_TYPE::INSTANT_SEGMENT:
+      return fmt::format("{}#instbin#seg{}", mmgr_name(), id_);
+  }
+  return {};
 }
 
 cache_segment::cache_segment(std::string_view mmgr_name,
