@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <map>
 #include <memory_resource>
-#include <shared_memory.hpp>
+#include <shared_memory/shared_memory.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>

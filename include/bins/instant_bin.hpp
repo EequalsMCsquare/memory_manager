@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <string_view>
 
-#include <shm_kernel/shared_memory.hpp>
+#include <shared_memory/shared_memory.hpp>
 
 #include "segment.hpp"
 

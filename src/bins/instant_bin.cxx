@@ -2,7 +2,7 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 
-#include "error_condition.hpp"
+#include "ec.hpp"
 
 namespace shm_kernel::memory_manager {
 instant_bin::instant_bin(std::atomic_size_t&             segment_counter,

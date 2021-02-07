@@ -3,7 +3,7 @@
 #include "bins/instant_bin.hpp"
 #include "bins/static_bin.hpp"
 #include "config.hpp"
-#include "error_condition.hpp"
+#include "ec.hpp"
 #include "segment.hpp"
 
 #include <atomic>

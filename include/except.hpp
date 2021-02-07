@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "error_condition.hpp"
+#include "ec.hpp"
 
 namespace shm_kernel::memory_manager {
 class MmgrExcept : std::exception

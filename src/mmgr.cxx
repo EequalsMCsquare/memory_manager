@@ -1,7 +1,7 @@
 #include "mmgr.hpp"
 #include "bins/cache_bin.hpp"
 #include "bins/instant_bin.hpp"
-#include "error_condition.hpp"
+#include "ec.hpp"
 #include "except.hpp"
 #include "segment.hpp"
 #include <memory>

@@ -14,7 +14,7 @@
 #include <spdlog/spdlog.h>
 #include <utility>
 
-#include "error_condition.hpp"
+#include "ec.hpp"
 #include "segment.hpp"
 
 namespace shm_kernel::memory_manager {

@@ -1,5 +1,5 @@
 #include "bins/cache_bin.hpp"
-#include "error_condition.hpp"
+#include "ec.hpp"
 #include "segment.hpp"
 #include <chrono>
 #include <condition_variable>
@@ -11,7 +11,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#include <shm_kernel/shared_memory.hpp>
+#include <shared_memory/shared_memory.hpp>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <system_error>

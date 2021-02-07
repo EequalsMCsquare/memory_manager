@@ -9,8 +9,8 @@
 
 #include <spdlog/logger.h>
 
+#include "ec.hpp"
 #include "segment.hpp"
-#include "error_condition.hpp"
 
 namespace shm_kernel::memory_manager {
 class static_bin
@@ -45,7 +45,8 @@ public:
     const size_t&       base_pshift,
     std::shared_ptr<spdlog::logger> = spdlog::default_logger());
 
-  std::shared_ptr<static_segment> malloc(const size_t nbytes, std::error_code& ec) noexcept;
+  std::shared_ptr<static_segment> malloc(const size_t     nbytes,
+                                         std::error_code& ec) noexcept;
 
   /**
    * @brief if free success, 0 will be returned.
@@ -55,7 +56,8 @@ public:
    * @param std::shared_ptr<base_segment>
    * @return int
    */
-  int free(std::shared_ptr<static_segment> segment, std::error_code& ec) noexcept;
+  int free(std::shared_ptr<static_segment> segment,
+           std::error_code&                ec) noexcept;
 
   void clear() noexcept;
 
