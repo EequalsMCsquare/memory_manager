@@ -62,12 +62,13 @@ smgr::register_segment(const segment_info* segment,
       auto __insert_shm_rv =
         this->attached_shm_.insert({ __shm_name, { __shm, 1 } });
       // set current process addr
-      __seg->set_ptr(static_cast<char*>(__shm->map()) + __seg->addr_pshift_);
+      
+      __seg->set_ptr(static_cast<char*>(__shm->map(ec)) + __seg->addr_pshift_);
       return __seg;
     } else {
       // if shm object found, increase the local ref_count
 
-      auto* __buffer = static_cast<char*>(__shm_iter->second.first->map());
+      auto* __buffer = static_cast<char*>(__shm_iter->second.first->map(ec));
       if (__buffer == nullptr) {
         ec = MmgrErrc::NullptrBuffer;
         return nullptr;

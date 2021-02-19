@@ -164,7 +164,7 @@ batch::init_shm(const size_t& buffsz)
   auto handle_name = fmt::format("{}#batch{}#statbin", mmgr_name_, id_);
   try {
     this->handle_ =
-      std::make_unique<shared_memory::shm_handle>(handle_name, buffsz);
+      std::make_unique<ipc::shmhdl>(handle_name, buffsz);
   } catch (const std::exception& e) {
     _M_batch_logger->critical(
       "无法创建shm_handle with following args: "

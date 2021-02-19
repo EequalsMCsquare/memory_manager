@@ -11,7 +11,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#include <shared_memory/shared_memory.hpp>
+#include <ipc/shmhdl.hpp>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <system_error>

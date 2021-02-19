@@ -69,6 +69,14 @@ class segment_info
   friend class instant_segment;
   friend class smgr;
 
+public:
+  enum class STATUS
+  {
+    CREATED,
+    REG,
+    UNREG,
+  };
+
 private:
   char     mmgr_name_[128];
   size_t   id_;
@@ -81,6 +89,7 @@ private:
   };
   size_t batch_id_;
   size_t bin_id_;
+  STATUS status_;
 
   void set_ptr(void* const ptr) noexcept;
 
@@ -112,5 +121,7 @@ public:
   size_t           size() const noexcept;
   SEG_TYPE         type() const noexcept;
   std::string      shm_name() const noexcept;
+  char*            ptr() const noexcept;
+  STATUS           status() const noexcept;
 };
 }

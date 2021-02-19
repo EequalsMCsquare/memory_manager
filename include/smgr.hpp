@@ -5,14 +5,17 @@
 #include <cstddef>
 #include <map>
 #include <memory_resource>
-#include <shared_memory/shared_memory.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <ipc/shmhdl.hpp>
 #include <string_view>
 #include <system_error>
+
 namespace shm_kernel::memory_manager {
 
-using shm      = shm_kernel::shared_memory::shm_handle;
+
+
+using shm      = ipc::shmhdl;
 using buffer   = std::pair<void*, size_t>;
 using shm_refc = std::pair<std::shared_ptr<shm>, size_t>;
 

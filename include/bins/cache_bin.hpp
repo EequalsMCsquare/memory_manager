@@ -14,13 +14,13 @@
 #include <spdlog/spdlog.h>
 #include <utility>
 
-#include "ec.hpp"
-#include "segment.hpp"
+// #include "segment.hpp"
 
 namespace shm_kernel::memory_manager {
 
 constexpr uint32_t BUFF_AREA_COUNT = 8;
 
+class cache_segment;
 class cache_bin
 {
 

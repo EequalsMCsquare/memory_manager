@@ -19,11 +19,12 @@ segment_info::segment_info(std::string_view mmgr_name,
     throw std::runtime_error("mmgr name is too long! size < 128 required!");
   }
   std::strncpy(this->mmgr_name_, mmgr_name.data(), 128);
-  this->id_   = id;
-  this->size_ = size;
-  this->type_ = seg_type;
+  this->status_       = STATUS::CREATED;
+  this->id_           = id;
+  this->size_         = size;
+  this->type_         = seg_type;
+  this->local_buffer_ = nullptr;
 }
-
 segment_info::segment_info(std::string_view mmgr_name,
                            const size_t     id,
                            const size_t     size,
@@ -33,9 +34,10 @@ segment_info::segment_info(std::string_view mmgr_name,
                            const size_t     bin_id)
   : segment_info(mmgr_name, id, size, seg_type)
 {
-  this->addr_pshift_ = addr_pshift;
-  this->batch_id_    = batch_id;
-  this->bin_id_      = bin_id;
+  this->addr_pshift_  = addr_pshift;
+  this->batch_id_     = batch_id;
+  this->bin_id_       = bin_id;
+  this->local_buffer_ = nullptr;
 }
 
 segment_info::segment_info(std::shared_ptr<cache_segment> segment)
@@ -44,6 +46,40 @@ segment_info::segment_info(std::shared_ptr<cache_segment> segment)
                  segment->size,
                  SEG_TYPE::CACHE_SEGMENT)
 {}
+
+segment_info::segment_info(std::shared_ptr<static_segment> segment)
+  : segment_info(segment->mmgr_name,
+                 segment->id,
+                 segment->size,
+                 SEG_TYPE::STATIC_SEGMENT)
+{
+  this->batch_id_    = segment->batch_id;
+  this->bin_id_      = segment->bin_id;
+  this->addr_pshift_ = segment->addr_pshift;
+}
+
+segment_info::segment_info(std::shared_ptr<instant_segment> segment)
+  : segment_info(segment->mmgr_name,
+                 segment->id,
+                 segment->size,
+                 SEG_TYPE::INSTANT_SEGMENT)
+{
+  this->addr_pshift_ = 0;
+}
+char*
+segment_info::ptr() const noexcept
+{
+  if (this->status_ != STATUS::REG) {
+    return nullptr;
+  } else {
+    return static_cast<char*>(this->local_buffer_);
+  }
+}
+segment_info::STATUS
+segment_info::status() const noexcept
+{
+  return this->status_;
+}
 
 std::string_view
 segment_info::mmgr_name() const noexcept

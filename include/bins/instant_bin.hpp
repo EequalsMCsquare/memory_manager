@@ -7,18 +7,19 @@
 #include <spdlog/spdlog.h>
 #include <string_view>
 
-#include <shared_memory/shared_memory.hpp>
+#include <ipc/shmhdl.hpp>
 
-#include "segment.hpp"
 
 namespace shm_kernel::memory_manager {
+
+class instant_segment;
 class instant_bin
 {
 protected:
   std::atomic_size_t& segment_counter_ref_;
   std::mutex          mtx_;
   std::string_view    mmgr_name_;
-  std::map<int, std::shared_ptr<shared_memory::shm_handle>> segments_;
+  std::map<int, std::shared_ptr<ipc::shmhdl>> segments_;
   std::shared_ptr<spdlog::logger>                           _M_instbin_logger;
 
 public:
@@ -43,7 +44,7 @@ public:
 
   const size_t size() noexcept;
 
-  std::shared_ptr<shared_memory::shm_handle> get_shmhdl(
+  std::shared_ptr<ipc::shmhdl> get_shmhdl(
     const size_t&    seg_id,
     std::error_code& ec) noexcept;
 };

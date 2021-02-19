@@ -9,10 +9,9 @@
 
 #include <spdlog/logger.h>
 
-#include "ec.hpp"
-#include "segment.hpp"
-
 namespace shm_kernel::memory_manager {
+
+class static_segment;
 class static_bin
 {
 protected:

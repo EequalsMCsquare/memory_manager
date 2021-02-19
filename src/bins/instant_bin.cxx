@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include "ec.hpp"
+#include <segment.hpp>
 
 namespace shm_kernel::memory_manager {
 instant_bin::instant_bin(std::atomic_size_t&             segment_counter,
@@ -19,9 +20,9 @@ instant_bin::malloc(const size_t nbytes, std::error_code& ec) noexcept
   ec.clear();
   size_t                      __tmp = this->segment_counter_ref_++;
   std::lock_guard<std::mutex> GGGGGGGGGGGGGGGGGGGGG(mtx_);
-  std::shared_ptr<shared_memory::shm_handle> __shm;
+  std::shared_ptr<ipc::shmhdl> __shm;
   try {
-    __shm = std::make_shared<shared_memory::shm_handle>(
+    __shm = std::make_shared<ipc::shmhdl>(
       fmt::format("{}#instbin#seg{}", mmgr_name_, __tmp), nbytes);
   } catch (const std::exception& e) {
     this->_M_instbin_logger->error(
@@ -74,7 +75,7 @@ instant_bin::size() noexcept
   return this->segments_.size();
 }
 
-std::shared_ptr<shared_memory::shm_handle>
+std::shared_ptr<ipc::shmhdl>
 instant_bin::get_shmhdl(const size_t& seg_id, std::error_code& ec) noexcept
 {
   auto __pair = this->segments_.find(seg_id);

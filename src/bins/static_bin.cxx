@@ -1,5 +1,6 @@
 #include "bins/static_bin.hpp"
 #include "config.hpp"
+#include "ec.hpp"
 #include "segment.hpp"
 
 #include <algorithm>

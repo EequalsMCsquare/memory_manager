@@ -27,7 +27,7 @@ protected:
   size_t              total_bytes_;
   std::atomic_size_t& segment_counter_ref_;
 
-  std::unique_ptr<shared_memory::shm_handle> handle_;
+  std::unique_ptr<ipc::shmhdl> handle_;
   std::vector<std::unique_ptr<static_bin>>   static_bins_;
   std::shared_ptr<spdlog::logger>            _M_batch_logger;
 
