@@ -73,7 +73,7 @@ mmgr::add_BATCH()
 }
 
 std::shared_ptr<cache_segment>
-mmgr::cachbin_STORE(const void*      buffer,
+mmgr::CACHE_STORE(const void*      buffer,
                     const size_t     size,
                     std::error_code& ec) noexcept
 {
@@ -92,10 +92,10 @@ mmgr::cachbin_STORE(const void*      buffer,
   return __seg;
 }
 std::shared_ptr<cache_segment>
-mmgr::cachbin_STORE(const void* buffer, const size_t size)
+mmgr::CACHE_STORE(const void* buffer, const size_t size)
 {
   std::error_code ec;
-  auto            __seg = this->cachbin_STORE(buffer, size, ec);
+  auto            __seg = this->CACHE_STORE(buffer, size, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
@@ -103,7 +103,7 @@ mmgr::cachbin_STORE(const void* buffer, const size_t size)
 }
 
 std::shared_ptr<cache_segment>
-mmgr::cachbin_STORE(const size_t                      size,
+mmgr::CACHE_STORE(const size_t                      size,
                     std::function<void(void* buffer)> callback,
                     std::error_code&                  ec) noexcept
 {
@@ -125,7 +125,7 @@ mmgr::cachbin_STORE(const size_t                      size,
 }
 
 int
-mmgr::cachbin_SET(const size_t                      segment_id,
+mmgr::CACHE_SET(const size_t                      segment_id,
                   const size_t                      size,
                   std::function<void(void* buffer)> callback,
                   std::error_code&                  ec) noexcept
@@ -154,7 +154,7 @@ mmgr::cachbin_SET(const size_t                      segment_id,
 }
 
 int
-mmgr::cachbin_SET(const size_t     segment_id,
+mmgr::CACHE_SET(const size_t     segment_id,
                   const void*      buffer,
                   const size_t     size,
                   std::error_code& ec) noexcept
@@ -179,12 +179,12 @@ mmgr::cachbin_SET(const size_t     segment_id,
   }
 }
 int
-mmgr::cachbin_SET(const size_t segment_id,
+mmgr::CACHE_SET(const size_t segment_id,
                   const void*  buffer,
                   const size_t size)
 {
   std::error_code ec;
-  this->cachbin_SET(segment_id, buffer, size, ec);
+  this->CACHE_SET(segment_id, buffer, size, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
@@ -192,7 +192,7 @@ mmgr::cachbin_SET(const size_t segment_id,
 }
 
 void*
-mmgr::cachbin_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept
+mmgr::CACHE_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept
 {
   auto __iter = this->segment_table_.find(segment_id);
   if (__iter == this->segment_table_.end()) {
@@ -210,17 +210,17 @@ mmgr::cachbin_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept
 }
 
 void*
-mmgr::cachbin_RETRIEVE(const size_t segment_id)
+mmgr::CACHE_RETRIEVE(const size_t segment_id)
 {
   std::error_code ec;
-  void*           __ptr = this->cachbin_RETRIEVE(segment_id, ec);
+  void*           __ptr = this->CACHE_RETRIEVE(segment_id, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
   return __ptr;
 }
 std::shared_ptr<instant_segment>
-mmgr::instbin_ALLOC(const size_t size, std::error_code& ec) noexcept
+mmgr::INSTANT_ALLOC(const size_t size, std::error_code& ec) noexcept
 {
   ec.clear();
   auto __seg = this->instant_bin_->malloc(size, ec);
@@ -234,10 +234,10 @@ mmgr::instbin_ALLOC(const size_t size, std::error_code& ec) noexcept
   return __seg;
 }
 std::shared_ptr<instant_segment>
-mmgr::instbin_ALLOC(const size_t size)
+mmgr::INSTANT_ALLOC(const size_t size)
 {
   std::error_code ec;
-  auto            __seg = this->instbin_ALLOC(size, ec);
+  auto            __seg = this->INSTANT_ALLOC(size, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
@@ -245,7 +245,7 @@ mmgr::instbin_ALLOC(const size_t size)
 }
 
 std::shared_ptr<static_segment>
-mmgr::statbin_ALLOC(const size_t size, std::error_code& ec) noexcept
+mmgr::STATIC_ALLOC(const size_t size, std::error_code& ec) noexcept
 {
   ec.clear();
   std::shared_ptr<static_segment> __seg;
@@ -278,10 +278,10 @@ mmgr::statbin_ALLOC(const size_t size, std::error_code& ec) noexcept
 }
 
 std::shared_ptr<static_segment>
-mmgr::statbin_ALLOC(const size_t size)
+mmgr::STATIC_ALLOC(const size_t size)
 {
   std::error_code ec;
-  auto            __seg = this->statbin_ALLOC(size, ec);
+  auto            __seg = this->STATIC_ALLOC(size, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
@@ -289,7 +289,7 @@ mmgr::statbin_ALLOC(const size_t size)
 }
 
 int
-mmgr::instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
+mmgr::INSTANT_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 {
   ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
@@ -319,17 +319,17 @@ mmgr::instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 }
 
 int
-mmgr::instbin_DEALLOC(const size_t segment_id)
+mmgr::INSTANT_DEALLOC(const size_t segment_id)
 {
   std::error_code ec;
-  this->instbin_DEALLOC(segment_id, ec);
+  this->INSTANT_DEALLOC(segment_id, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
   return 0;
 }
 int
-mmgr::statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
+mmgr::STATIC_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 {
   ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
@@ -360,10 +360,10 @@ mmgr::statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 }
 
 int
-mmgr::statbin_DEALLOC(const size_t segment_id)
+mmgr::STATIC_DEALLOC(const size_t segment_id)
 {
   std::error_code ec;
-  this->statbin_DEALLOC(segment_id, ec);
+  this->STATIC_DEALLOC(segment_id, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }
@@ -371,7 +371,7 @@ mmgr::statbin_DEALLOC(const size_t segment_id)
 }
 
 int
-mmgr::cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
+mmgr::CACHE_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
 {
   ec.clear();
   auto __iter = this->segment_table_.find(segment_id);
@@ -401,10 +401,10 @@ mmgr::cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept
   return -1;
 }
 int
-mmgr::cachbin_DEALLOC(const size_t segment_id)
+mmgr::CACHE_DEALLOC(const size_t segment_id)
 {
   std::error_code ec;
-  this->cachbin_DEALLOC(segment_id, ec);
+  this->CACHE_DEALLOC(segment_id, ec);
   if (ec) {
     throw MmgrExcept(ec);
   }

@@ -439,7 +439,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
     WHEN("store a long with cache bin")
     {
       long num   = 100;
-      auto __seg = pool.cachbin_STORE(&num, 8, ec);
+      auto __seg = pool.CACHE_STORE(&num, 8, ec);
       REQUIRE(__seg != nullptr);
       REQUIRE(__seg->id == 0);
       REQUIRE(__seg->size == 8);
@@ -450,13 +450,13 @@ SCENARIO("allocate with mmgr", "[mmgr]")
       }
       AND_WHEN("retrive the segment")
       {
-        long* __buff = static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+        long* __buff = static_cast<long*>(pool.CACHE_RETRIEVE(__seg->id, ec));
         REQUIRE(__buff != nullptr);
         REQUIRE(*__buff == num);
       }
       AND_WHEN("dealloc the segment")
       {
-        pool.cachbin_DEALLOC(__seg->id, ec);
+        pool.CACHE_DEALLOC(__seg->id, ec);
         THEN("segment count should be 0")
         {
           REQUIRE(pool.segment_count() == 0);
@@ -469,12 +469,12 @@ SCENARIO("allocate with mmgr", "[mmgr]")
           long new_num = 200;
           THEN("modify the value")
           {
-            int rv = pool.cachbin_SET(__seg->id, &new_num, sizeof(long), ec);
+            int rv = pool.CACHE_SET(__seg->id, &new_num, sizeof(long), ec);
             REQUIRE(rv == 0);
             AND_THEN("retrive the new data")
             {
               long* __new_buff =
-                static_cast<long*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+                static_cast<long*>(pool.CACHE_RETRIEVE(__seg->id, ec));
               REQUIRE(__new_buff != nullptr);
               REQUIRE(*__new_buff == new_num);
             }
@@ -485,7 +485,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
     WHEN("store long with cache bin using callback function")
     {
       double num   = 3.14;
-      auto   __seg = pool.cachbin_STORE(
+      auto   __seg = pool.CACHE_STORE(
         sizeof(double),
         [num](void* buffer) { *(static_cast<double*>(buffer)) = num; },
         ec);
@@ -500,13 +500,13 @@ SCENARIO("allocate with mmgr", "[mmgr]")
       AND_WHEN("retrive the segment")
       {
         double* __buff =
-          static_cast<double*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+          static_cast<double*>(pool.CACHE_RETRIEVE(__seg->id, ec));
         REQUIRE(__buff != nullptr);
         REQUIRE(*__buff == num);
       }
       AND_WHEN("dealloc the segment")
       {
-        pool.cachbin_DEALLOC(__seg->id, ec);
+        pool.CACHE_DEALLOC(__seg->id, ec);
         THEN("segment count should be 0")
         {
           REQUIRE(pool.segment_count() == 0);
@@ -519,7 +519,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
           float new_num = 6.2831852;
           THEN("modify the value")
           {
-            int rv = pool.cachbin_SET(
+            int rv = pool.CACHE_SET(
               __seg->id,
               sizeof(float),
               [new_num](void* buffer) {
@@ -530,7 +530,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
             AND_THEN("retrive the new data")
             {
               float* __new_buff =
-                static_cast<float*>(pool.cachbin_RETRIEVE(__seg->id, ec));
+                static_cast<float*>(pool.CACHE_RETRIEVE(__seg->id, ec));
               REQUIRE(__new_buff != nullptr);
               REQUIRE(*__new_buff == new_num);
             }
@@ -541,7 +541,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
 
     WHEN("alloc with static bin")
     {
-      auto __seg = pool.statbin_ALLOC(128, ec);
+      auto __seg = pool.STATIC_ALLOC(128, ec);
       REQUIRE(__seg != nullptr);
       REQUIRE(__seg->batch_id == 0);
       REQUIRE(__seg->bin_id == 0);
@@ -551,7 +551,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
 
       WHEN("dealloc the segment")
       {
-        pool.statbin_DEALLOC(__seg->id, ec);
+        pool.STATIC_DEALLOC(__seg->id, ec);
         THEN("segment count should be 0")
         {
           REQUIRE(pool.segment_count() == 0);
@@ -561,7 +561,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
 
     WHEN("alloc with instant bin")
     {
-      auto __seg = pool.instbin_ALLOC(32_MB, ec);
+      auto __seg = pool.INSTANT_ALLOC(32_MB, ec);
       REQUIRE(__seg->type == libmem::SEG_TYPE::INSTANT_SEGMENT);
       REQUIRE(__seg->mmgr_name.compare("test") == 0);
       REQUIRE(__seg->id == 0);
@@ -569,7 +569,7 @@ SCENARIO("allocate with mmgr", "[mmgr]")
 
       WHEN("dealloc the segment")
       {
-        pool.instbin_DEALLOC(__seg->id, ec);
+        pool.INSTANT_DEALLOC(__seg->id, ec);
         THEN("segment count should be 0")
         {
           REQUIRE(pool.segment_count() == 0);
@@ -586,7 +586,7 @@ TEST_CASE("smgr test", "[smgr]")
   libmem::mmgr    mm(mmgr_name, { 128 }, { 100 });
   libmem::smgr    sm(mmgr_name);
 
-  auto seg1 = mm.statbin_ALLOC(128);
+  auto seg1 = mm.STATIC_ALLOC(128);
   REQUIRE(seg1->type == libmem::SEG_TYPE::STATIC_SEGMENT);
   REQUIRE(seg1->size == 128);
   auto mm_seg_info1 = seg1->to_seginfo();

@@ -48,47 +48,47 @@ public:
        std::shared_ptr<spdlog::logger> = spdlog::default_logger());
   virtual ~mmgr();
 
-  std::shared_ptr<cache_segment> cachbin_STORE(
+  std::shared_ptr<cache_segment> CACHE_STORE(
     const size_t                      size,
     std::function<void(void* buffer)> callback,
     std::error_code&                  ec) noexcept;
-  std::shared_ptr<cache_segment> cachbin_STORE(const void*      buffer,
+  std::shared_ptr<cache_segment> CACHE_STORE(const void*      buffer,
                                                const size_t     size,
                                                std::error_code& ec) noexcept;
-  std::shared_ptr<cache_segment> cachbin_STORE(const void*  buffer,
+  std::shared_ptr<cache_segment> CACHE_STORE(const void*  buffer,
                                                const size_t size);
 
-  int cachbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
-  int cachbin_DEALLOC(const size_t segment_id);
+  int CACHE_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int CACHE_DEALLOC(const size_t segment_id);
 
-  int cachbin_SET(const size_t                      segment_id,
+  int CACHE_SET(const size_t                      segment_id,
                   const size_t                      size,
                   std::function<void(void* buffer)> callback,
                   std::error_code&                  ec) noexcept;
-  int cachbin_SET(const size_t     segment_id,
+  int CACHE_SET(const size_t     segment_id,
                   const void*      buffer,
                   const size_t     size,
                   std::error_code& ec) noexcept;
-  int cachbin_SET(const size_t segment_id,
+  int CACHE_SET(const size_t segment_id,
                   const void*  buffer,
                   const size_t size);
 
-  void* cachbin_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept;
-  void* cachbin_RETRIEVE(const size_t segment_id);
+  void* CACHE_RETRIEVE(const size_t segment_id, std::error_code& ec) noexcept;
+  void* CACHE_RETRIEVE(const size_t segment_id);
 
-  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t     size,
+  std::shared_ptr<instant_segment> INSTANT_ALLOC(const size_t     size,
                                                  std::error_code& ec) noexcept;
-  std::shared_ptr<instant_segment> instbin_ALLOC(const size_t size);
+  std::shared_ptr<instant_segment> INSTANT_ALLOC(const size_t size);
 
-  int instbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
-  int instbin_DEALLOC(const size_t segment_id);
+  int INSTANT_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int INSTANT_DEALLOC(const size_t segment_id);
 
-  std::shared_ptr<static_segment> statbin_ALLOC(const size_t     size,
+  std::shared_ptr<static_segment> STATIC_ALLOC(const size_t     size,
                                                 std::error_code& ec) noexcept;
-  std::shared_ptr<static_segment> statbin_ALLOC(const size_t size);
+  std::shared_ptr<static_segment> STATIC_ALLOC(const size_t size);
 
-  int statbin_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
-  int statbin_DEALLOC(const size_t segment_id);
+  int STATIC_DEALLOC(const size_t segment_id, std::error_code& ec) noexcept;
+  int STATIC_DEALLOC(const size_t segment_id);
 
   std::shared_ptr<base_segment> get_segment(const size_t     segment_id,
                                             std::error_code& ec) noexcept;

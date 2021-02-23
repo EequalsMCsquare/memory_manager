@@ -107,6 +107,7 @@ private:
                const size_t     bin_id);
 
 public:
+  segment_info() = default;
   // cache segment constructor
   segment_info(std::shared_ptr<cache_segment>);
 
