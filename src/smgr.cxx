@@ -2,7 +2,6 @@
 #include "ec.hpp"
 #include "segment.hpp"
 
-#include <asio.hpp>
 #include <atomic>
 #include <utility>
 namespace shm_kernel::memory_manager {

@@ -1,6 +1,5 @@
 #pragma once
 #include "segment.hpp"
-#include <asio/io_context.hpp>
 #include <atomic>
 #include <cstddef>
 #include <map>
